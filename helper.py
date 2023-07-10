@@ -44,6 +44,27 @@ def print_board(p):
 def generate_moves_opening(position):
     return generate_add(position)
 
+def generate_moves_mid(board):
+    num_white_pieces, num_black_pieces = count_pieces(board)
+    if num_white_pieces == 3:
+        return generate_hopping(board)
+    else:
+        return generate_move(board)
+
+def generate_moves_opening_black(position):
+    swapped_board = swap_pieces(position)
+    possible_positions = generate_moves_opening(swapped_board)
+    for board_index in range(0, len(possible_positions)):
+        possible_positions[board_index] = swap_pieces(possible_positions[board_index])
+    return possible_positions
+
+def generate_moves_mid_black(board):
+    swapped_board = swap_pieces(board)
+    possible_positions = generate_moves_mid(swapped_board)
+    for board_index in range(0, len(possible_positions)):
+        possible_positions[board_index] = swap_pieces(possible_positions[board_index])
+    return possible_positions
+
 def generate_add(board):
     possible_boards = []
 
@@ -62,6 +83,73 @@ def generate_add(board):
             # Else, just add board to possible boards list
             else:
                 possible_boards.append(board_copy)
+
+    return possible_boards
+
+def generate_hopping(board):
+    possible_boards = []
+
+    # Parse for possible starting points
+    for start_index in range(0, len(board)):
+        if board[start_index] == 'W':
+
+            # Parse for possible landing points
+            for landing_index in range(0, len(board)):
+                if board[landing_index] == 'x':
+                    board_copy = board.copy()
+                    board_copy[start_index] = 'x'
+                    board_copy[landing_index] = 'W'
+
+                    # If landing point closes a mill, remove opponent piece
+                    if close_mill(landing_index, board_copy):
+                        generate_remove(board_copy, possible_boards)
+                    else:
+                        possible_boards.append(board_copy)
+
+    return possible_boards
+
+def generate_remove(board, possible_boards):
+    num_positions_added = 0
+
+    # Iterate through possible black locations
+    for index in range(0, len(board)):
+
+        # Add piece if current index is black
+        if board[index] == "B":
+
+            # Do not remove pieces from existing mills
+            if not close_mill(index, board):
+                board_copy = board.copy()
+                board_copy[index] = 'x'
+                possible_boards.append(board_copy)
+                num_positions_added += 1
+
+    # No positions were added
+    if num_positions_added == 0:
+        possible_boards.append(board)
+
+def generate_move(board):
+    possible_boards = []
+
+    # Parse through possible starting pieces to move
+    for start_index in range(0, len(board)):
+        if board[start_index] == 'W':
+            neighbor_list = neighbors(start_index)
+
+            # Parse through possible landing positions for a given starting piece
+            for landing_index in neighbor_list:
+
+                # If valid spot, make copy of board and move piece to landing index
+                if board[landing_index] == 'x':
+                    board_copy = board.copy()
+                    board_copy[start_index] = 'x'
+                    board_copy[landing_index] = 'W'
+
+                    # Check if landing index causes mill
+                    if close_mill(landing_index, board_copy):
+                        generate_remove(board_copy, possible_boards)
+                    else:
+                        possible_boards.append(board_copy)
 
     return possible_boards
 
@@ -244,128 +332,6 @@ def close_mill(location_ind, board):
 
     return False
 
-def generate_remove(board, possible_boards):
-    num_positions_added = 0
-
-    # Iterate through possible black locations
-    for index in range(0, len(board)):
-
-        # Add piece if current index is black
-        if board[index] == "B":
-
-            # Do not remove pieces from existing mills
-            if not close_mill(index, board):
-                board_copy = board.copy()
-                board_copy[index] = 'x'
-                possible_boards.append(board_copy)
-                num_positions_added += 1
-
-    # No positions were added
-    if num_positions_added == 0:
-        possible_boards.append(board)
-
-def static_estimation_opening(board):
-    num_white_pieces, num_black_pieces = count_pieces(board)
-    return num_white_pieces - num_black_pieces
-
-def count_pieces(board):
-    num_white_pieces = 0
-    num_black_pieces = 0
-
-    for piece in board:
-        if piece == 'W':
-            num_white_pieces += 1
-        if piece == 'B':
-            num_black_pieces += 1
-
-    return num_white_pieces, num_black_pieces
-
-def swap_pieces(board):
-    board_copy = board.copy()
-
-    for index in range(0, len(board_copy)):
-        if board_copy[index] == 'W':
-            board_copy[index] = 'B'
-        elif board_copy[index] == 'B':
-            board_copy[index] = 'W'
-
-    return board_copy
-
-def generate_moves_mid(board):
-    num_white_pieces, num_black_pieces = count_pieces(board)
-    if num_white_pieces == 3:
-        return generate_hopping(board)
-    else:
-        return generate_move(board)
-
-def generate_hopping(board):
-    possible_boards = []
-
-    # Parse for possible starting points
-    for start_index in range(0, len(board)):
-        if board[start_index] == 'W':
-
-            # Parse for possible landing points
-            for landing_index in range(0, len(board)):
-                if board[landing_index] == 'x':
-                    board_copy = board.copy()
-                    board_copy[start_index] = 'x'
-                    board_copy[landing_index] = 'W'
-
-                    # If landing point closes a mill, remove opponent piece
-                    if close_mill(landing_index, board_copy):
-                        generate_remove(board_copy, possible_boards)
-                    else:
-                        possible_boards.append(board_copy)
-
-    return possible_boards
-
-def generate_move(board):
-    possible_boards = []
-
-    # Parse through possible starting pieces to move
-    for start_index in range(0, len(board)):
-        if board[start_index] == 'W':
-            neighbor_list = neighbors(start_index)
-
-            # Parse through possible landing positions for a given starting piece
-            for landing_index in neighbor_list:
-
-                # If valid spot, make copy of board and move piece to landing index
-                if board[landing_index] == 'x':
-                    board_copy = board.copy()
-                    board_copy[start_index] = 'x'
-                    board_copy[landing_index] = 'W'
-
-                    # Check if landing index causes mill
-                    if close_mill(landing_index, board_copy):
-                        generate_remove(board_copy, possible_boards)
-                    else:
-                        possible_boards.append(board_copy)
-
-    return possible_boards
-
-def static_estimation_mid(board):
-    num_white_pieces, num_black_pieces = count_pieces(board)
-
-    if num_black_pieces <= 2:
-        return 10000
-    if num_white_pieces <= 2:
-        return -10000
-
-    # Get possible list of positions generated by black move
-    swapped_board = swap_pieces(board)
-    black_positions = generate_moves_mid(swapped_board)
-    for board_index in range(0, len(black_positions)):
-        black_positions[board_index] = swap_pieces(black_positions[board_index])
-
-    num_black_moves = len(black_positions)
-
-    if num_black_moves == 0:
-        return 10000
-    else:
-        return 1000 * (num_white_pieces - num_black_pieces) - num_black_moves
-
 def neighbors(location_index):
     if location_index == 0:
         return [1, 6]
@@ -410,6 +376,54 @@ def neighbors(location_index):
     else:
         return [11, 19]
 
+def count_pieces(board):
+    num_white_pieces = 0
+    num_black_pieces = 0
+
+    for piece in board:
+        if piece == 'W':
+            num_white_pieces += 1
+        if piece == 'B':
+            num_black_pieces += 1
+
+    return num_white_pieces, num_black_pieces
+
+def swap_pieces(board):
+    board_copy = board.copy()
+
+    for index in range(0, len(board_copy)):
+        if board_copy[index] == 'W':
+            board_copy[index] = 'B'
+        elif board_copy[index] == 'B':
+            board_copy[index] = 'W'
+
+    return board_copy
+
+def static_estimation_opening(board):
+    num_white_pieces, num_black_pieces = count_pieces(board)
+    return num_white_pieces - num_black_pieces
+
+def static_estimation_mid(board):
+    num_white_pieces, num_black_pieces = count_pieces(board)
+
+    if num_black_pieces <= 2:
+        return 10000
+    if num_white_pieces <= 2:
+        return -10000
+
+    # Get possible list of positions generated by black move
+    swapped_board = swap_pieces(board)
+    black_positions = generate_moves_mid(swapped_board)
+    for board_index in range(0, len(black_positions)):
+        black_positions[board_index] = swap_pieces(black_positions[board_index])
+
+    num_black_moves = len(black_positions)
+
+    if num_black_moves == 0:
+        return 10000
+    else:
+        return 1000 * (num_white_pieces - num_black_pieces) - num_black_moves
+
 def output_board_to_txt(array, filename):
     # Create the output directory if it doesn't exist
     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
@@ -422,3 +436,4 @@ def output_board_to_txt(array, filename):
     filepath = os.path.join(output_dir, filename)
     with open(filepath, 'w') as file:
         file.write(array_string)
+
