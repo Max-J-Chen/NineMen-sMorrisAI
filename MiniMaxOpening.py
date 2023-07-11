@@ -21,9 +21,9 @@ def max_min(cur_node):
 
             positions_evaluated += 1
 
-            print("Depth:", child.depth)
-            helper.print_board(child.board)
-            print("Static Value:", child.value, "\n")
+            # print("Depth:", child.depth)
+            # helper.print_board(child.board)
+            # print("Static Value:", child.value, "\n")
 
             if child_value > cur_node.value:
                 cur_node.value = child_value
@@ -48,9 +48,9 @@ def min_max(cur_node):
 
             positions_evaluated += 1
 
-            print("Depth:", child.depth)
-            helper.print_board(child.board)
-            print("Static Value:", child.value, "\n")
+            # print("Depth:", child.depth)
+            # helper.print_board(child.board)
+            # print("Static Value:", child.value, "\n")
 
             if child_value < cur_node.value:
                 cur_node.value = child_value

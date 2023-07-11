@@ -159,34 +159,37 @@ def generate_move(board):
 
     return possible_boards
 
-def close_mill(location_ind, board):
-    player_color = board[location_ind]
+def close_mill(location_index, board):
+    player_color = board[location_index]
 
-    if location_ind == 0:
+    if player_color == 'x':
+        return False
+
+    elif location_index == 0:
         if board[6] == player_color and board[18] == player_color:
             return True
 
-    elif location_ind == 1:
+    elif location_index == 1:
         if board[11] == player_color and board[20] == player_color:
             return True
 
-    elif location_ind == 2:
+    elif location_index == 2:
         if board[7] == player_color and board[15] == player_color:
             return True
 
-    elif location_ind == 3:
+    elif location_index == 3:
         if board[10] == player_color and board[17] == player_color:
             return True
 
-    elif location_ind == 4:
+    elif location_index == 4:
         if board[8] == player_color and board[12] == player_color:
             return True
 
-    elif location_ind == 5:
+    elif location_index == 5:
         if board[9] == player_color and board[14] == player_color:
             return True
 
-    elif location_ind == 6:
+    elif location_index == 6:
         if board[0] == player_color and board[18] == player_color:
             return True
 
@@ -196,7 +199,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 7:
+    elif location_index == 7:
         if board[2] == player_color and board[15] == player_color:
             return True
 
@@ -206,7 +209,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 8:
+    elif location_index == 8:
         if board[12] == player_color and board[4] == player_color:
             return True
 
@@ -216,7 +219,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 9:
+    elif location_index == 9:
         if board[14] == player_color and board[5] == player_color:
             return True
 
@@ -226,7 +229,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 10:
+    elif location_index == 10:
         if board[17] == player_color and board[3] == player_color:
             return True
 
@@ -236,7 +239,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 11:
+    elif location_index == 11:
         if board[9] == player_color and board[10] == player_color:
             return True
 
@@ -246,7 +249,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 12:
+    elif location_index == 12:
         if board[8] == player_color and board[4] == player_color:
             return True
 
@@ -256,7 +259,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 13:
+    elif location_index == 13:
         if board[12] == player_color and board[14] == player_color:
             return True
 
@@ -266,7 +269,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 14:
+    elif location_index == 14:
         if board[12] == player_color and board[13] == player_color:
             return True
 
@@ -276,7 +279,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 15:
+    elif location_index == 15:
         if board[7] == player_color and board[2] == player_color:
             return True
 
@@ -286,7 +289,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 16:
+    elif location_index == 16:
         if board[15] == player_color and board[17] == player_color:
             return True
 
@@ -296,7 +299,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 17:
+    elif location_index == 17:
         if board[16] == player_color and board[15] == player_color:
             return True
 
@@ -306,7 +309,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 18:
+    elif location_index == 18:
         if board[6] == player_color and board[0] == player_color:
             return True
 
@@ -316,7 +319,7 @@ def close_mill(location_ind, board):
         else:
             return False
 
-    elif location_ind == 19:
+    elif location_index == 19:
         if board[18] == player_color and board[20] == player_color:
             return True
 
