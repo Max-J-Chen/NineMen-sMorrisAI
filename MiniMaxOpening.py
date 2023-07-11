@@ -2,84 +2,133 @@ import helper
 import Tree
 import time
 
-def generate_tree(board, next_turn, max_depth, generator_white, generator_black, static_estimate):
 
-    # Create root at given board
-    root = Tree.Node(board, value=None, depth=0)
-
-    # Determine whose turn is next from current board
-    current_turn = 0 if next_turn == "White" else 1
-
-    # Generate children with DFS: Next move 0 = white, 1 = black
-    generate_tree_recurse(cur_node=root,
-                          current_turn=current_turn,
-                          generator_white=generator_white,
-                          generator_black=generator_black,
-                          static_estimate=static_estimate,
-                          cur_depth=1,
-                          max_depth=max_depth)
-
-    return root
-
-def generate_tree_recurse(cur_node, current_turn, generator_white, generator_black, static_estimate, cur_depth, max_depth):
-
-    # Base case
-    if cur_depth > max_depth:
-        return
-
-    # Even if white's turn, odd if black's turn
-    generator = generator_white if current_turn % 2 == 0 else generator_black
-    player = "White's " if current_turn % 2 == 0 else "Black's "
-
-    # Generate children of current node and add to children list
-    children_list = generator(cur_node.board)
-
-    for child in children_list:
-
-        child_node = Tree.Node(child, value=static_estimate(child), depth=cur_depth) if cur_depth == max_depth \
-            else Tree.Node(child, value=None, depth=cur_depth)
-
-        cur_node.add_child(child_node)
-
-        # print("Depth = ", child_node.depth, " ", player, "move")
-        # helper.print_board(child_node.board)
-        # print("Static Value= ", child_node.value, "\n")
-
-    # Recurse on children
-    for child_node in cur_node.children:
-        generate_tree_recurse(child_node, current_turn + 1, generator_white, generator_black, static_estimate, cur_depth + 1, max_depth)
-
-def minimax_game(tree):
-    pass
+def minimax_game(root):
+    max_min(root)
 
 def max_min(cur_node):
-    pass
+    if len(cur_node.children) == 0:
+        return cur_node.value
+    else:
+
+        global positions_evaluated
+
+        cur_node.value = float('-inf')  # set value to negative infinity
+        best_child = None  # initialize best_child as None
+
+        for child in cur_node.children:
+            child_value = min_max(child)
+
+            positions_evaluated += 1
+
+            print("Depth:", child.depth)
+            helper.print_board(child.board)
+            print("Static Value:", child.value, "\n")
+
+            if child_value > cur_node.value:
+                cur_node.value = child_value
+                best_child = child  # update best_child if a better value is found
+
+        cur_node.best_child = best_child  # save the best_child in the current node
+        return cur_node.value
+
 
 def min_max(cur_node):
+    if len(cur_node.children) == 0:
+        return cur_node.value
+    else:
 
-    pass
+        global positions_evaluated
 
+        cur_node.value = float('inf')  # set value to positive infinity
+        best_child = None  # initialize best_child as None
 
+        for child in cur_node.children:
+            child_value = max_min(child)
 
+            positions_evaluated += 1
 
+            print("Depth:", child.depth)
+            helper.print_board(child.board)
+            print("Static Value:", child.value, "\n")
 
+            if child_value < cur_node.value:
+                cur_node.value = child_value
+                best_child = child  # update best_child if a better value is found
 
+        cur_node.best_child = best_child  # save the best_child in the current node
+        return cur_node.value
+
+# def MiniMaxOpening(board, player_turn):
+#     # Initialize parameters
+#     positions_evaluated = 0
+#     max_depth = 5
+#
+#     # Generate tree
+#     tree = Tree.generate_tree(board=board,
+#                               max_depth=max_depth,
+#                               player_turn=whose_turn_is_it,
+#                               generator_white=helper.generate_moves_opening,
+#                               generator_black=helper.generate_moves_opening_black,
+#                               static_estimate=helper.static_estimation_opening)
+#
+#     # Minimax
+#     minimax_game(tree, whose_turn_is_it)
+#
+#     print("Best Move for", whose_turn_is_it)
+#     helper.print_board(tree.best_child.board)
+#     print("Board Position:", ''.join(map(str, tree.best_child.board)))
+#     print("Positions evaluated by static estimation:", positions_evaluated)
+#     print("MINIMAX estimate:", tree.value)
+#     print()
+#
+#     return tree.best_child.board
+#
+
+# Read board
 pos = helper.read_file_contents()
+
+# Time
+start_time = time.time()
+
+# Initialize parameters
+positions_evaluated = 0
+max_depth = 2
+
+# Generate tree
+tree = Tree.generate_tree(board=pos,
+                          max_depth=max_depth,
+                          generator=helper.generate_moves_opening,
+                          static_estimate=helper.static_estimation_opening)
+
+
 print("Current Board")
 helper.print_board(pos)
 print()
 
-start_time = time.time()
-
-tree = generate_tree(board=pos,
-                     max_depth=3,
-                     next_turn="Black",
-                     generator_white=helper.generate_moves_opening,
-                     generator_black=helper.generate_moves_opening_black,
-                     static_estimate=helper.static_estimation_opening)
+minimax_game(tree)
+print("Best Move for White")
+helper.print_board(tree.best_child.board)
+print("Board Position:", ''.join(map(str, tree.best_child.board)))
+print("Positions evaluated by static estimation:", positions_evaluated)
+print("MINIMAX estimate:", tree.value)
+print()
 
 end_time = time.time()
 elapsed_time = end_time - start_time
 
-print("Number of nodes: ", Tree.Node.count)
+print("Number of nodes generated: ", Tree.Node.count)
 print("Elapsed time:", elapsed_time, "seconds")
+
+# print("Current Board:", whose_turn_is_it, "'s turn")
+# helper.print_board(pos)
+# print()
+
+current_node = tree
+turn_count = 1
+while current_node.best_child is not None:
+    print("Turn", turn_count)
+    helper.print_board(current_node.best_child.board)
+
+    current_node = current_node.best_child
+    turn_count += 1

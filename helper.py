@@ -6,10 +6,16 @@ def read_file_contents():
     # Get the root directory of the executable
     root_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # Open file explorer dialog starting at the root directory
+    # Specify the subdirectory name
+    subdirectory = 'input'
+
+    # Create the full path to the subdirectory
+    input_dir = os.path.join(root_dir, subdirectory)
+
+    # Open file explorer dialog starting at the input directory
     root = tk.Tk()
     root.withdraw()
-    file_path = filedialog.askopenfilename(initialdir=root_dir, filetypes=[("Text Files", "*.txt")])
+    file_path = filedialog.askopenfilename(initialdir=input_dir, filetypes=[("Text Files", "*.txt")])
 
     if not file_path:
         return None
