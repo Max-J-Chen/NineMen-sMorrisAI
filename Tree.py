@@ -43,7 +43,7 @@ def generate_tree_recurse(cur_node, cur_depth, first_player_gen, second_player_g
     cur_depth = cur_depth
 
     # Base case
-    if cur_depth > max_depth:
+    if cur_depth > int(max_depth):
         return
 
     # Determine if Max or Min. Odd depth should be first_player_gen

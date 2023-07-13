@@ -8,4 +8,4 @@ minimax.minimax(max_depth=max_depth,
                 phase=1,
                 static_estimate=helper.static_estimation_opening,
                 output_file_name="MiniMaxOpeningOutput.txt",
-                player_color="White")
+                player_color="Black")

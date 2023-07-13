@@ -3,7 +3,7 @@
 
 #
 # print_board(positions2)
-import MiniMaxOpening
+import minimax
 import helper
 import tkinter as tk
 from PIL import ImageTk, Image
