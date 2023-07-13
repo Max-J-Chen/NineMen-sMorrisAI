@@ -80,13 +80,13 @@ def min_max(cur_node, alpha, beta):
         return best_value, best_child_node
 
 
-def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color):
+def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color, pos=None):
     # Reinitialize parameters
     global positions_evaluated
     positions_evaluated = 0
 
-    # Read board
-    pos = helper.read_file_contents()
+    if pos is None:
+        pos = helper.read_file_contents()
 
     # Swap if player is black
     if player_color == "Black":
@@ -161,5 +161,4 @@ def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color)
         current_node = current_node.best_child
         turn_count += 1
 
-
-alphabeta(8, 1, helper.static_estimation_opening, "Output.txt", "White")
+    return best_board

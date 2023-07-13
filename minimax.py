@@ -5,6 +5,7 @@ import time
 
 positions_evaluated = 0
 
+
 def max_min(cur_node):
     # Iterate positions evaluated
     global positions_evaluated
@@ -25,6 +26,16 @@ def max_min(cur_node):
             child_value, _ = min_max(child)
 
             # Get the largest value of the min_max value of the children
+            if child_value == None:
+                child_value = float('-inf')
+                print("MaxMin")
+                print(child)
+                print("Depth:", child.depth)
+                print("ERRROR")
+
+                print(child_value)
+                print(best_value)
+
             if child_value > best_value:
                 best_value = child_value
                 best_child_node = child
@@ -55,6 +66,16 @@ def min_max(cur_node):
             # Recursively call max_min on each child's children
             child_value, _ = max_min(child)
 
+            if child_value == None:
+                print("MinMax")
+                child_value= float('inf')
+                print(child)
+                print("Depth:", child.depth)
+                print("ERRROR")
+
+                print(child_value)
+                print(best_value)
+
             # Get the smallest value of the max_min value of the children
             if child_value < best_value:
                 best_value = child_value
@@ -67,13 +88,13 @@ def min_max(cur_node):
         return best_value, best_child_node
 
 
-def minimax(max_depth, phase, static_estimate, output_file_name, player_color):
+def minimax(max_depth, phase, static_estimate, output_file_name, player_color, pos=None):
     # Reinitialize parameters
     global positions_evaluated
     positions_evaluated = 0
 
-    # Read board
-    pos = helper.read_file_contents()
+    if pos is None:
+        pos = helper.read_file_contents()
 
     # Swap if player is black
     if player_color == "Black":
@@ -148,3 +169,4 @@ def minimax(max_depth, phase, static_estimate, output_file_name, player_color):
         current_node = current_node.best_child
         turn_count += 1
 
+    return best_board

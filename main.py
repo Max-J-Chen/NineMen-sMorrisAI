@@ -3,10 +3,15 @@
 
 #
 # print_board(positions2)
+import alphabeta
 import minimax
 import helper
 import tkinter as tk
 from PIL import ImageTk, Image
+import os
+
+import tkinter as tk
+from PIL import Image, ImageTk
 import os
 
 
@@ -45,10 +50,11 @@ def display_image():
     box_objects = []
 
     # Ordered array of size 21 with elements 'x', 'W', or 'B'
-    input_board = ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x']
+    input_board = ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x',
+                   'x']
 
     # Function to draw a filled circle at the given coordinates
-    def draw_filled_circle(x, y, color):
+    def draw_filled_circle(x, y, color, index):
         if color == 'W':
             circle_color = 'white'
             outline_color = 'black'
@@ -62,20 +68,38 @@ def display_image():
 
         circle = canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
                                     fill=circle_color, outline=outline_color, width=outline_width)
+
         circle_objects.append(circle)  # Store the circle object
+
+        # Bind the click event to the circle
+        canvas.tag_bind(circle, '<Button-1>', lambda event, i=index: on_circle_click(event, i))
+
+    # Function to handle circle click event
+    def on_circle_click(event, index):
+        if input_board[index] != 'x':
+            # Replace the element in the input_board array with 'x'
+            input_board[index] = 'x'
+            clear_board()
+            draw_board()
+
+            print(input_board)
 
     # Function to handle mouse hover over a box
     def on_box_hover(event, index):
-        canvas.itemconfig(box_objects[index], fill='blue')  # Change the box color on hover
+        if input_board[index] == 'x':
+            canvas.itemconfig(box_objects[index], fill='')  # Change the box color on hover
+            canvas.tag_raise(box_objects[index])  # Raise the box to be on top
 
     # Function to handle mouse hover out of a box
     def on_box_hover_out(event, index):
-        canvas.itemconfig(box_objects[index], fill='')  # Reset the box color on hover out
+        if input_board[index] == 'x':
+            canvas.itemconfig(box_objects[index], fill='', outline='')  # Reset the box color
+        else:
+            canvas.itemconfig(box_objects[index], fill='',
+                              outline='')  # Keep the box color for non-'x' elements
 
     # Function to handle box click event
     def on_box_click(event, index):
-        nonlocal input_board  # Declare input_board as nonlocal
-
         if input_board[index] != 'x':
             return  # Skip if the element is not 'x'
 
@@ -84,24 +108,12 @@ def display_image():
         elif selected_option.get() == 'Black':
             input_board[index] = 'B'  # Update the input board with 'B'
 
+        # Delete the box object from the canvas
+        canvas.delete(box_objects[index])
+
         clear_board()
         draw_board()
         print(input_board)  # Print the updated board
-
-        AI_turn()
-
-    def AI_turn():
-        nonlocal input_board  # Declare input_board as nonlocal
-
-        if selected_option.get() == 'White':
-            AI_color = "Black"
-        elif selected_option.get() == 'Black':
-            AI_color = "White"
-
-        input_board = MiniMaxOpening.MiniMaxOpening(input_board, AI_color)
-        clear_board()
-        draw_board()
-
 
     # Function to clear the board and delete the circles
     def clear_board():
@@ -109,25 +121,30 @@ def display_image():
             canvas.delete(circle)
         circle_objects.clear()
 
+        for box in box_objects:
+            canvas.delete(box)
+
     # Function to draw the board with circles based on the input_board
     def draw_board():
         for index, element in enumerate(input_board):
             x, y = coordinates[index]
-            draw_filled_circle(x, y, element)
+            draw_filled_circle(x, y, element, index)
+
+            if element == 'x':
+                box = canvas.create_rectangle(x - radius, y - radius, x + radius, y + radius,
+                                              fill='', outline='', tags=index)
+
+                canvas.tag_bind(box, '<Enter>', lambda event, i=index: on_box_hover(event, i))
+                canvas.tag_bind(box, '<Leave>', lambda event, i=index: on_box_hover_out(event, i))
+                canvas.tag_bind(box, '<Button-1>', lambda event, i=index: on_box_click(event, i))
+
+                box_objects.append(box)  # Store the box object
 
     # Create the boxes on each coordinate
-    for index, (x, y) in enumerate(coordinates):
-        box = canvas.create_rectangle(x - radius, y - radius, x + radius, y + radius,
-                                      fill='', outline='', tags=index)
-
-        canvas.tag_bind(box, '<Enter>', lambda event, i=index: on_box_hover(event, i))
-        canvas.tag_bind(box, '<Leave>', lambda event, i=index: on_box_hover_out(event, i))
-        canvas.tag_bind(box, '<Button-1>', lambda event, i=index: on_box_click(event, i))
-
-        box_objects.append(box)  # Store the box object
+    draw_board()
 
     # Button click event handler
-    def on_button_click():
+    def on_load_board_button():
         nonlocal input_board  # Declare input_board as nonlocal
 
         input_board = helper.read_file_contents()  # Load a new input board using helper.read_file_contents()
@@ -137,11 +154,72 @@ def display_image():
         clear_board()
         draw_board()
 
-    # Button click event handler
-    def on_reset_click():
-        nonlocal input_board  # Declare input_board as nonlocal
+    def on_end_turn_button():
 
-        input_board = ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x']
+        nonlocal input_board
+        i = 3
+        if selected_option2.get() == 'MiniMaxOpening':
+            if selected_option.get() == 'White':
+                input_board = minimax.minimax(max_depth=i,
+                                              phase=1,
+                                              static_estimate=helper.static_estimation_opening,
+                                              output_file_name="MiniMaxOpeningOutput.txt",
+                                              player_color="Black",
+                                              pos=input_board)
+            else:
+                input_board = minimax.minimax(max_depth=i,
+                                              phase=1,
+                                              static_estimate=helper.static_estimation_opening,
+                                              output_file_name="MiniMaxOpeningOutput.txt",
+                                              player_color="White",
+                                              pos=input_board)
+
+        elif selected_option2.get() == 'MiniMaxGame':
+            if selected_option.get() == 'White':
+                input_board = minimax.minimax(max_depth=i,
+                                              phase=2,
+                                              static_estimate=helper.static_estimation_mid,
+                                              output_file_name="MiniMaxOpeningOutput.txt",
+                                              player_color="Black",
+                                              pos=input_board)
+            else:
+                input_board = minimax.minimax(max_depth=i,
+                                              phase=2,
+                                              static_estimate=helper.static_estimation_mid,
+                                              output_file_name="MiniMaxOpeningOutput.txt",
+                                              player_color="White",
+                                              pos=input_board)
+
+        elif selected_option2.get() == 'ABOpening':
+            if selected_option.get() == 'White':
+                input_board = alphabeta.alphabeta(max_depth=i,
+                                                  phase=1,
+                                                  static_estimate=helper.static_estimation_opening,
+                                                  output_file_name="MiniMaxOpeningOutput.txt",
+                                                  player_color="Black",
+                                                  pos=input_board)
+            else:
+                input_board = alphabeta.alphabeta(max_depth=i,
+                                                  phase=1,
+                                                  static_estimate=helper.static_estimation_opening,
+                                                  output_file_name="MiniMaxOpeningOutput.txt",
+                                                  player_color="White",
+                                                  pos=input_board)
+        else:
+            if selected_option.get() == 'White':
+                input_board = alphabeta.alphabeta(max_depth=i,
+                                                  phase=2,
+                                                  static_estimate=helper.static_estimation_mid,
+                                                  output_file_name="MiniMaxOpeningOutput.txt",
+                                                  player_color="Black",
+                                                  pos=input_board)
+            else:
+                input_board = alphabeta.alphabeta(max_depth=i,
+                                                  phase=2,
+                                                  static_estimate=helper.static_estimation_mid,
+                                                  output_file_name="MiniMaxOpeningOutput.txt",
+                                                  player_color="White",
+                                                  pos=input_board)
 
         clear_board()
         draw_board()
@@ -150,9 +228,25 @@ def display_image():
     sidebar_frame = tk.Frame(root)
     sidebar_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=20, pady=20)  # Increase the padding
 
-    # Create the load_board in the sidebar
-    button = tk.Button(sidebar_frame, text="Load Board", command=on_button_click)
+    # Create the button in the sidebar
+    button = tk.Button(sidebar_frame, text="Load Board", command=on_load_board_button)
     button.pack(pady=10)
+
+    # Create the button in the sidebar
+    button = tk.Button(sidebar_frame, text="End Turn", command=on_end_turn_button)
+    button.pack(pady=10)
+
+    # Create the label and dropdown menu in the sidebar
+    label = tk.Label(sidebar_frame, text="AI Type: ")
+    label.pack(pady=10)
+
+    # Create the dropdown menu options
+    options2 = ['MiniMaxOpening', 'MiniMaxGame', 'ABOpening', 'ABGame']
+    selected_option2 = tk.StringVar()
+    selected_option2.set(options2[0])  # Set the initial selected option
+
+    dropdown = tk.OptionMenu(sidebar_frame, selected_option2, *options2)
+    dropdown.pack(pady=10)
 
     # Create the label and dropdown menu in the sidebar
     label = tk.Label(sidebar_frame, text="Playing as: ")
@@ -166,46 +260,9 @@ def display_image():
     dropdown = tk.OptionMenu(sidebar_frame, selected_option, *options)
     dropdown.pack(pady=10)
 
-    # Create the reset button in the sidebar
-    button = tk.Button(sidebar_frame, text="Reset", command=on_reset_click)
-    button.pack(pady=10)
-
     # Run the Tkinter event loop
     root.mainloop()
 
 
 # Call the function to display the image
 display_image()
-
-# coordinates = [(97, 847), (903, 846), (232, 712), (767, 709), (367, 576), (635, 577), (98, 443), (232, 443), (365, 444), (636, 444), (769, 444), (903, 442), (366, 311), (499, 308), (634, 309), (232, 176), (500, 174), (768, 175), (97, 41), (499, 42), (903, 41)]
-
-
-
-
-# p = helper.read_file_contents()
-#
-# root = tk.Tk()
-#
-# button = tk.Button(root, text="Print Board", command=on_button_click)
-# button.pack()
-#
-# root.mainloop()
-
-
-
-#
-# pos = helper.read_file_contents()
-# helper.print_board(pos)
-#
-# # new = swap_pieces(pos)
-# # print_board(new)
-#
-#
-# possible = helper.generate_moves_mid(pos)
-# print(possible)
-# print(len(possible))
-#
-# for poss in possible:
-#     helper.print_board(poss)
-#
-# helper.output_board_to_txt(possible[0], "output.txt")
