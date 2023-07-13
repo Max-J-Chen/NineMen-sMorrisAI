@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 import os
+import sys
 
 def read_file_contents():
     # Get the root directory of the executable
@@ -24,6 +25,11 @@ def read_file_contents():
     with open(file_path, 'r') as file:
         contents = file.read()
         array = list(contents)
+
+    # Verify inputs
+    if not verify_input(array):
+        print("Invalid Input")
+        sys.exit()
 
     return array
 
@@ -447,10 +453,10 @@ def output_board_to_txt(array, filename):
         file.write(array_string)
 
 def verify_input(array):
-    if len(array) is not 21:
+    if len(array) != 21:
         return False
     for element in array:
-        if element is not 'W' and element is not 'B' and element is not 'x':
+        if element != 'W' and element != 'B' and element != 'x':
             return False
 
     return True

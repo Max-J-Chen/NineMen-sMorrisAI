@@ -75,10 +75,6 @@ def minimax(max_depth, phase, static_estimate, output_file_name, player_color):
     # Read board
     pos = helper.read_file_contents()
 
-    # if helper.verify_input(pos):
-    #     print("Invalid Input")
-    #     sys.exit()
-
     # Swap if player is black
     if player_color == "Black":
         pos = helper.swap_pieces(pos)
