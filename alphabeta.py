@@ -5,7 +5,7 @@ import time
 
 positions_evaluated = 0
 
-def max_min(cur_node):
+def max_min(cur_node, alpha, beta):
     # Iterate positions evaluated
     global positions_evaluated
     positions_evaluated += 1
@@ -22,12 +22,18 @@ def max_min(cur_node):
         for child in cur_node.children:
 
             # Recursively call min_max on each child's children
-            child_value, _ = min_max(child)
+            child_value, _ = min_max(child, alpha, beta)
 
             # Get the largest value of the min_max value of the children
             if child_value > best_value:
                 best_value = child_value
                 best_child_node = child
+
+            # Check value against beta
+            if best_value >= beta:
+                break
+            else:   # Update alpha
+                alpha = max(best_value, alpha)
 
         # Change current node's values and best_child
         cur_node.value = best_value
@@ -36,7 +42,7 @@ def max_min(cur_node):
         return best_value, best_child_node
 
 
-def min_max(cur_node):
+def min_max(cur_node, alpha, beta):
     # Iterate positions evaluated
     global positions_evaluated
     positions_evaluated += 1
@@ -53,12 +59,19 @@ def min_max(cur_node):
         for child in cur_node.children:
 
             # Recursively call max_min on each child's children
-            child_value, _ = max_min(child)
+            child_value, _ = max_min(child, alpha, beta)
 
             # Get the smallest value of the max_min value of the children
             if child_value < best_value:
                 best_value = child_value
                 best_child_node = child
+
+            # Check value against alpha
+            if best_value <= alpha:
+                break
+            else:   # Update beta
+                beta = min(best_value, beta)
+
 
         # Change current node's values and best_child
         cur_node.value = best_value
@@ -67,17 +80,13 @@ def min_max(cur_node):
         return best_value, best_child_node
 
 
-def minimax(max_depth, phase, static_estimate, output_file_name, player_color):
+def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color):
     # Reinitialize parameters
     global positions_evaluated
     positions_evaluated = 0
 
     # Read board
     pos = helper.read_file_contents()
-
-    # if helper.verify_input(pos):
-    #     print("Invalid Input")
-    #     sys.exit()
 
     # Swap if player is black
     if player_color == "Black":
@@ -93,7 +102,7 @@ def minimax(max_depth, phase, static_estimate, output_file_name, player_color):
                               static_estimate=static_estimate)
 
     # Run minimax
-    max_min(tree)
+    max_min(tree, float('-inf'), float('inf'))
 
     # Swap back if player is black
     if player_color == "Black":
@@ -152,3 +161,5 @@ def minimax(max_depth, phase, static_estimate, output_file_name, player_color):
         current_node = current_node.best_child
         turn_count += 1
 
+
+alphabeta(8, 1, helper.static_estimation_opening, "Output.txt", "White")
