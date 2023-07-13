@@ -1,134 +1,137 @@
+import sys
 import helper
 import Tree
 import time
 
-
 def minimax_game(root):
-    max_min(root)
+    return max_min(root)
 
 def max_min(cur_node):
+    # Iterate positions evaluated
+    global positions_evaluated
+    positions_evaluated += 1
+
+    # Check if leaf
     if len(cur_node.children) == 0:
-        return cur_node.value
+        return cur_node.value, None
     else:
 
-        global positions_evaluated
+        best_value = float('-inf')  # Set to negative infinity
+        best_child_node = None
 
-        cur_node.value = float('-inf')  # set value to negative infinity
-        best_child = None  # initialize best_child as None
-
+        # Iterate through each of the current node's children
         for child in cur_node.children:
-            child_value = min_max(child)
 
-            positions_evaluated += 1
+            # Recursively call min_max on each child's children
+            child_value, _ = min_max(child)
 
-            # print("Depth:", child.depth)
-            # helper.print_board(child.board)
-            # print("Static Value:", child.value, "\n")
+            # Get the largest value of the min_max value of the children
+            if child_value > best_value:
+                best_value = child_value
+                best_child_node = child
 
-            if child_value > cur_node.value:
-                cur_node.value = child_value
-                best_child = child  # update best_child if a better value is found
+        # Change current node's values and best_child
+        cur_node.value = best_value
+        cur_node.best_child = best_child_node
 
-        cur_node.best_child = best_child  # save the best_child in the current node
-        return cur_node.value
+        return best_value, best_child_node
 
 
 def min_max(cur_node):
+    # Iterate positions evaluated
+    global positions_evaluated
+    positions_evaluated += 1
+
+    # Check if leaf
     if len(cur_node.children) == 0:
-        return cur_node.value
+        return cur_node.value, None
     else:
 
-        global positions_evaluated
+        best_value = float('inf')  # Set to infinity
+        best_child_node = None
 
-        cur_node.value = float('inf')  # set value to positive infinity
-        best_child = None  # initialize best_child as None
-
+        # Iterate through each of the current node's children
         for child in cur_node.children:
-            child_value = max_min(child)
 
-            positions_evaluated += 1
+            # Recursively call max_min on each child's children
+            child_value, _ = max_min(child)
 
-            # print("Depth:", child.depth)
-            # helper.print_board(child.board)
-            # print("Static Value:", child.value, "\n")
+            # Get the smallest value of the max_min value of the children
+            if child_value < best_value:
+                best_value = child_value
+                best_child_node = child
 
-            if child_value < cur_node.value:
-                cur_node.value = child_value
-                best_child = child  # update best_child if a better value is found
+        # Change current node's values and best_child
+        cur_node.value = best_value
+        cur_node.best_child = best_child_node
 
-        cur_node.best_child = best_child  # save the best_child in the current node
-        return cur_node.value
+        return best_value, best_child_node
 
-# def MiniMaxOpening(board, player_turn):
-#     # Initialize parameters
-#     positions_evaluated = 0
-#     max_depth = 5
-#
-#     # Generate tree
-#     tree = Tree.generate_tree(board=board,
-#                               max_depth=max_depth,
-#                               player_turn=whose_turn_is_it,
-#                               generator_white=helper.generate_moves_opening,
-#                               generator_black=helper.generate_moves_opening_black,
-#                               static_estimate=helper.static_estimation_opening)
-#
-#     # Minimax
-#     minimax_game(tree, whose_turn_is_it)
-#
-#     print("Best Move for", whose_turn_is_it)
-#     helper.print_board(tree.best_child.board)
-#     print("Board Position:", ''.join(map(str, tree.best_child.board)))
-#     print("Positions evaluated by static estimation:", positions_evaluated)
-#     print("MINIMAX estimate:", tree.value)
-#     print()
-#
-#     return tree.best_child.board
-#
 
 # Read board
 pos = helper.read_file_contents()
+if helper.verify_input(pos):
+    print("Invalid Input")
+    sys.exit()
 
 # Time
 start_time = time.time()
 
 # Initialize parameters
 positions_evaluated = 0
-max_depth = 2
+max_depth = 6
+phase = 2
+static_estimate = helper.static_estimation_mid
 
 # Generate tree
 tree = Tree.generate_tree(board=pos,
                           max_depth=max_depth,
-                          generator=helper.generate_moves_opening,
-                          static_estimate=helper.static_estimation_opening)
+                          phase=phase,
+                          static_estimate=static_estimate)
 
-
-print("Current Board")
+# Print Current Board
+print("Current Board:")
 helper.print_board(pos)
 print()
 
+# Run minimax
 minimax_game(tree)
-print("Best Move for White")
+
+# Print Best Move Board
+print("Best Move for White:")
 helper.print_board(tree.best_child.board)
 print("Board Position:", ''.join(map(str, tree.best_child.board)))
 print("Positions evaluated by static estimation:", positions_evaluated)
 print("MINIMAX estimate:", tree.value)
 print()
 
+# Calculate elapsed time
 end_time = time.time()
 elapsed_time = end_time - start_time
 
+# Print ancillary statistics
 print("Number of nodes generated: ", Tree.Node.count)
 print("Elapsed time:", elapsed_time, "seconds")
 
-# print("Current Board:", whose_turn_is_it, "'s turn")
-# helper.print_board(pos)
-# print()
+# Store output
+helper.output_board_to_txt(tree.best_child.board, "MiniMaxOpeningOutput.txt")
+
+# Print predicted turns
+print("\n________________________________________________")
+print("Predicted Turns: ")
 
 current_node = tree
-turn_count = 1
-while current_node.best_child is not None:
+turn_count = 0
+while current_node is not None:
+
+    if turn_count > max_depth:
+        break
+
     print("Turn", turn_count)
-    helper.print_board(current_node.best_child.board)
+    helper.print_board(current_node.board)
+    print("Depth=", current_node.depth)
+    print("Static Value=", current_node.value)
+    print("Best Child Node=", current_node.best_child, "\n")
 
     current_node = current_node.best_child
     turn_count += 1

@@ -446,3 +446,11 @@ def output_board_to_txt(array, filename):
     with open(filepath, 'w') as file:
         file.write(array_string)
 
+def verify_input(array):
+    if len(array) is not 21:
+        return False
+    for element in array:
+        if element is not 'W' and element is not 'B' and element is not 'x':
+            return False
+
+    return True
