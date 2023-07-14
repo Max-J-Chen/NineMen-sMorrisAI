@@ -26,16 +26,6 @@ def max_min(cur_node):
             child_value, _ = min_max(child)
 
             # Get the largest value of the min_max value of the children
-            if child_value == None:
-                child_value = float('-inf')
-                print("MaxMin")
-                print(child)
-                print("Depth:", child.depth)
-                print("ERRROR")
-
-                print(child_value)
-                print(best_value)
-
             if child_value > best_value:
                 best_value = child_value
                 best_child_node = child
@@ -65,16 +55,6 @@ def min_max(cur_node):
 
             # Recursively call max_min on each child's children
             child_value, _ = max_min(child)
-
-            if child_value == None:
-                print("MinMax")
-                child_value= float('inf')
-                print(child)
-                print("Depth:", child.depth)
-                print("ERRROR")
-
-                print(child_value)
-                print(best_value)
 
             # Get the smallest value of the max_min value of the children
             if child_value < best_value:
@@ -120,6 +100,15 @@ def minimax(max_depth, phase, static_estimate, output_file_name, player_color, p
     print("Current Board:")
     helper.print_board(pos)
     print()
+
+    # Catch exception for no possible moves
+    if tree.best_child is None:
+        print("No possible moves for current board.")
+        helper.print_board(pos)
+        print("Board Position", ''.join(map(str, pos)))
+        print("Positions evaluated by static estimation:", positions_evaluated)
+        print("MINIMAX estimate:", tree.value)
+        sys.exit()
 
     # Swap best board if player is black
     best_board = tree.best_child.board

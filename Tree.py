@@ -40,6 +40,7 @@ def generate_tree(board, max_depth, static_estimate, phase):
     return root
 
 def generate_tree_recurse(cur_node, cur_depth, first_player_gen, second_player_gen, static_estimate, max_depth):
+
     cur_depth = cur_depth
 
     # Base case
@@ -52,8 +53,17 @@ def generate_tree_recurse(cur_node, cur_depth, first_player_gen, second_player_g
     else:
         generator = first_player_gen
 
-    # Generate children of current node and add to children list
+    # Generate possible boards of current node
     possible_boards = generator(cur_node.board)
+
+    # Current player has no more moves, then set static estimate value to inf
+    if len(possible_boards) == 0:
+        if generator == second_player_gen:  # Black can't make the turn
+            cur_node.value = float('inf')
+        else:                               # White can't make the turn
+            cur_node.value = float('-inf')
+
+    # Assign static estimation values and add to children list
     for board in possible_boards:
         if cur_depth == max_depth or board.count('x') == 0:
             child_node = Node(board, value=static_estimate(board), depth=cur_depth)
@@ -75,7 +85,8 @@ def print_tree(root):
         print("Depth=", cur_node.depth)
         print("Static Value=", cur_node.value)
         print("Current Node= ", cur_node)
-        print("Best Child Node=", cur_node.best_child, "\n")
+        print("Best Child Node=", cur_node.best_child)
+        print("Children Nodes= ", cur_node.children, "\n")
         for child in cur_node.children:
             queue.put(child)
 
