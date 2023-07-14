@@ -158,6 +158,7 @@ def display_image():
 
         nonlocal input_board
         i = 3
+
         if selected_option2.get() == 'MiniMaxOpening':
             if selected_option.get() == 'White':
                 input_board = minimax.minimax(max_depth=i,
@@ -179,14 +180,14 @@ def display_image():
                 input_board = minimax.minimax(max_depth=i,
                                               phase=2,
                                               static_estimate=helper.static_estimation_mid,
-                                              output_file_name="MiniMaxOpeningOutput.txt",
+                                              output_file_name="MiniMaxGameOutput.txt",
                                               player_color="Black",
                                               pos=input_board)
             else:
                 input_board = minimax.minimax(max_depth=i,
                                               phase=2,
                                               static_estimate=helper.static_estimation_mid,
-                                              output_file_name="MiniMaxOpeningOutput.txt",
+                                              output_file_name="MiniMaxGameOutput.txt",
                                               player_color="White",
                                               pos=input_board)
 
@@ -195,29 +196,59 @@ def display_image():
                 input_board = alphabeta.alphabeta(max_depth=i,
                                                   phase=1,
                                                   static_estimate=helper.static_estimation_opening,
-                                                  output_file_name="MiniMaxOpeningOutput.txt",
+                                                  output_file_name="ABOpeningOutput.txt",
                                                   player_color="Black",
                                                   pos=input_board)
             else:
                 input_board = alphabeta.alphabeta(max_depth=i,
                                                   phase=1,
                                                   static_estimate=helper.static_estimation_opening,
-                                                  output_file_name="MiniMaxOpeningOutput.txt",
+                                                  output_file_name="ABOpeningOutput.txt",
                                                   player_color="White",
                                                   pos=input_board)
+        elif selected_option2.get() == 'MiniMaxOpeningImproved':
+            if selected_option.get() == 'White':
+                input_board = minimax.minimax(max_depth=i,
+                                              phase=1,
+                                              static_estimate=helper.static_estimation_opening_improved,
+                                              output_file_name="MiniMaxOpeningOutputImproved.txt",
+                                              player_color="Black",
+                                              pos=input_board)
+            else:
+                input_board = minimax.minimax(max_depth=i,
+                                              phase=1,
+                                              static_estimate=helper.static_estimation_opening_improved,
+                                              output_file_name="MiniMaxOpeningOutputImproved.txt",
+                                              player_color="White",
+                                              pos=input_board)
+        elif selected_option2.get() == 'MiniMaxGameImproved':
+            if selected_option.get() == 'White':
+                input_board = minimax.minimax(max_depth=i,
+                                              phase=2,
+                                              static_estimate=helper.static_estimation_mid_improved,
+                                              output_file_name="MiniMaxGameOutputImproved.txt",
+                                              player_color="Black",
+                                              pos=input_board)
+            else:
+                input_board = minimax.minimax(max_depth=i,
+                                              phase=2,
+                                              static_estimate=helper.static_estimation_mid_improved,
+                                              output_file_name="MiniMaxGameOutputImproved.txt",
+                                              player_color="White",
+                                              pos=input_board)
         else:
             if selected_option.get() == 'White':
                 input_board = alphabeta.alphabeta(max_depth=i,
                                                   phase=2,
                                                   static_estimate=helper.static_estimation_mid,
-                                                  output_file_name="MiniMaxOpeningOutput.txt",
+                                                  output_file_name="ABGameOutput.txt",
                                                   player_color="Black",
                                                   pos=input_board)
             else:
                 input_board = alphabeta.alphabeta(max_depth=i,
                                                   phase=2,
                                                   static_estimate=helper.static_estimation_mid,
-                                                  output_file_name="MiniMaxOpeningOutput.txt",
+                                                  output_file_name="ABGameOutput.txt",
                                                   player_color="White",
                                                   pos=input_board)
 
@@ -241,7 +272,7 @@ def display_image():
     label.pack(pady=10)
 
     # Create the dropdown menu options
-    options2 = ['MiniMaxOpening', 'MiniMaxGame', 'ABOpening', 'ABGame']
+    options2 = ['MiniMaxOpening', 'MiniMaxGame', 'ABOpening', 'ABGame', 'MiniMaxOpeningImproved', 'MiniMaxGameImproved']
     selected_option2 = tk.StringVar()
     selected_option2.set(options2[0])  # Set the initial selected option
 

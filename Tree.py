@@ -58,10 +58,14 @@ def generate_tree_recurse(cur_node, cur_depth, first_player_gen, second_player_g
 
     # Current player has no more moves, then set static estimate value to inf
     if len(possible_boards) == 0:
-        if generator == second_player_gen:  # Black can't make the turn
-            cur_node.value = float('inf')
-        else:                               # White can't make the turn
-            cur_node.value = float('-inf')
+        cur_node.value = static_estimate(cur_node.board)
+
+        # if generator == second_player_gen:  # Black can't make the turn
+        #     cur_node.value = float('inf')
+        # else:                               # White can't make the turn
+        #     cur_node.value = float('-inf')
+
+
 
     # Assign static estimation values and add to children list
     for board in possible_boards:

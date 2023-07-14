@@ -111,6 +111,7 @@ def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color,
     # Print Current Board
     print("Current Board:")
     helper.print_board(pos)
+    print("Board Position", ''.join(pos))
     print()
 
     # Swap best board if player is black
@@ -138,27 +139,27 @@ def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color,
     helper.output_board_to_txt(best_board, output_file_name)
 
     # Print predicted turns
-    print("\n________________________________________________")
-    print("Predicted Turns: ")
-
-    current_node = tree
-    turn_count = 0
-    while current_node is not None:
-
-        if turn_count > max_depth:
-            break
-
-        # Swap if player is black
-        if player_color == "Black":
-            current_node.board = helper.swap_pieces(current_node.board)
-
-        print("Turn", turn_count)
-        helper.print_board(current_node.board)
-        print("Depth=", current_node.depth)
-        print("Static Value=", current_node.value)
-        print("Best Child Node=", current_node.best_child, "\n")
-
-        current_node = current_node.best_child
-        turn_count += 1
+    # print("\n________________________________________________")
+    # print("Predicted Turns: ")
+    #
+    # current_node = tree
+    # turn_count = 0
+    # while current_node is not None:
+    #
+    #     if turn_count > max_depth:
+    #         break
+    #
+    #     # Swap if player is black
+    #     if player_color == "Black":
+    #         current_node.board = helper.swap_pieces(current_node.board)
+    #
+    #     print("Turn", turn_count)
+    #     helper.print_board(current_node.board)
+    #     print("Depth=", current_node.depth)
+    #     print("Static Value=", current_node.value)
+    #     print("Best Child Node=", current_node.best_child, "\n")
+    #
+    #     current_node = current_node.best_child
+    #     turn_count += 1
 
     return best_board
