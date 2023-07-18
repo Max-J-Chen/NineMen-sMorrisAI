@@ -2,6 +2,7 @@ import sys
 import helper
 import Tree
 import time
+import random
 
 positions_evaluated = 0
 
@@ -17,6 +18,9 @@ def max_min(cur_node, alpha, beta):
 
         best_value = float('-inf')  # Set to negative infinity
         best_child_node = None
+
+        # Randomly shuffle order of children
+        random.shuffle(cur_node.children)
 
         # Iterate through each of the current node's children
         for child in cur_node.children:
@@ -55,6 +59,9 @@ def min_max(cur_node, alpha, beta):
         best_value = float('inf')  # Set to infinity
         best_child_node = None
 
+        # Randomly shuffle order of children
+        random.shuffle(cur_node.children)
+
         # Iterate through each of the current node's children
         for child in cur_node.children:
 
@@ -72,15 +79,17 @@ def min_max(cur_node, alpha, beta):
             else:   # Update beta
                 beta = min(best_value, beta)
 
-
         # Change current node's values and best_child
         cur_node.value = best_value
         cur_node.best_child = best_child_node
 
         return best_value, best_child_node
 
+def are_arrays_equal(arr1, arr2):
+    return set(arr1) == set(arr2)
 
-def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color, pos=None):
+
+def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color, pos=None, root=None):
     # Reinitialize parameters
     global positions_evaluated
     positions_evaluated = 0
@@ -88,18 +97,35 @@ def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color,
     if pos is None:
         pos = helper.read_file_contents()
 
-    # Swap if player is black
-    if player_color == "Black":
-        pos = helper.swap_pieces(pos)
+
 
     # Time
     start_time = time.time()
+
+    tree = None
+    #
+    # print("Printing pos")
+    # print(pos)
+    #
+    # # Save time on tree generation if previous tree was provided
+    # if tree is not None:
+    #     # Set tree starting at the current input board
+    #     for child in tree.children:
+    #         if are_arrays_equal(child.board, pos):
+    #             tree = child
+    #             print("TREE = CHILD")
+    #             break
+
+    # Swap if player is black
+    if player_color == "Black":
+        pos = helper.swap_pieces(pos)
 
     # Generate tree
     tree = Tree.generate_tree(board=pos,
                               max_depth=int(max_depth),
                               phase=phase,
-                              static_estimate=static_estimate)
+                              static_estimate=static_estimate,
+                              tree=tree)
 
     # Run minimax
     max_min(tree, float('-inf'), float('inf'))
@@ -138,7 +164,7 @@ def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color,
     # Store output
     helper.output_board_to_txt(best_board, output_file_name)
 
-    # Print predicted turns
+    # # Print predicted turns
     # print("\n________________________________________________")
     # print("Predicted Turns: ")
     #
@@ -162,4 +188,4 @@ def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color,
     #     current_node = current_node.best_child
     #     turn_count += 1
 
-    return best_board
+    return best_board, tree

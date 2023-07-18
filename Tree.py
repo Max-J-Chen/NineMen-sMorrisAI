@@ -16,10 +16,12 @@ class Node(object):
     def add_child(self, obj):
         self.children.append(obj)
 
+def generate_tree(board, max_depth, static_estimate, phase, tree):
 
-def generate_tree(board, max_depth, static_estimate, phase):
+
     # Create root at given board
     root = Node(board, value=None, depth=0)
+
 
     # Determine which board generations to use
     if phase < 2:   # Opening phase
@@ -59,13 +61,6 @@ def generate_tree_recurse(cur_node, cur_depth, first_player_gen, second_player_g
     # Current player has no more moves, then set static estimate value to inf
     if len(possible_boards) == 0:
         cur_node.value = static_estimate(cur_node.board)
-
-        # if generator == second_player_gen:  # Black can't make the turn
-        #     cur_node.value = float('inf')
-        # else:                               # White can't make the turn
-        #     cur_node.value = float('-inf')
-
-
 
     # Assign static estimation values and add to children list
     for board in possible_boards:

@@ -5,7 +5,6 @@ import time
 
 positions_evaluated = 0
 
-
 def max_min(cur_node):
     # Iterate positions evaluated
     global positions_evaluated

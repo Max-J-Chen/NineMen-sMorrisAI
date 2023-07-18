@@ -414,6 +414,121 @@ def swap_pieces(board):
 
     return board_copy
 
+def count_open_potential_mills(board):
+    # Define mill patterns as sets of board positions
+    mill_patterns = [
+        {0, 6, 18}, {18, 19, 20}, {1, 11, 20}, {2, 7, 15},
+        {15, 16, 17}, {3, 10, 17}, {4, 8, 12}, {12, 13, 14},
+        {5, 9, 14}, {6, 7, 8}, {13, 16, 19}, {9, 10, 11}
+    ]
+
+    white_closed_mill_count = 0
+    black_closed_mill_count = 0
+    white_open_mill_count = 0
+    white_potential_mill_count = 0
+    black_open_mill_count = 0
+    black_potential_mill_count = 0
+
+    # Iterate through each pattern
+    for pattern in mill_patterns:
+        white_piece_count = 0
+        black_piece_count = 0
+        empty_count = 0
+        empty_index = None
+
+        # Check each position in the pattern
+        for pos in pattern:
+            if board[pos] == 'W':
+                white_piece_count += 1
+            elif board[pos] == 'B':
+                black_piece_count += 1
+            elif board[pos] == 'x':
+                empty_count += 1
+                empty_index = pos
+
+        if white_piece_count == 3:
+            white_closed_mill_count += 1
+
+        elif black_piece_count == 3:
+            black_closed_mill_count += 1
+
+        # Add to open mill count if 2 positions are controlled by White and 1 position is empty
+        if white_piece_count == 2 and empty_count == 1:
+            white_open_mill_count += 1
+
+            # Check neighbors of empty position to see if there is a potential mill
+            for neighbor in neighbors(empty_index):
+
+                # Check if controlled by white and not in the previous mill pattern
+                if board[neighbor] == 'W' and neighbor not in pattern:
+                    white_potential_mill_count += 1
+
+        # Add to open mill count if 2 positions are controlled by White and 1 position is empty
+        elif black_piece_count == 2 and empty_count == 1:
+            black_open_mill_count += 1
+
+            # Check neighbors of empty position to see if there is a potential mill
+            for neighbor in neighbors(empty_index):
+
+                # Check if controlled by white and not in the previous mill pattern
+                if board[neighbor] == 'B' and neighbor not in pattern:
+                    black_potential_mill_count += 1
+
+    return white_open_mill_count - black_open_mill_count, white_potential_mill_count - black_potential_mill_count, white_closed_mill_count - black_closed_mill_count
+
+def count_moves(board):
+    swapped_board = swap_pieces(board)
+    white_positions = len(generate_moves_mid(board))
+    black_positions = len(generate_moves_mid(swapped_board))
+
+    return white_positions, black_positions
+
+def count_positional_advantage(board):
+
+    three_way_white_over_black = 0
+    four_way_white_over_black = 0
+    upper_half_white_over_black = 0
+    middle_square_white_over_black = 0
+    inner_square_white_over_black = 0
+
+    three_way_intersection = [6, 8, 9, 11, 13, 19]
+    four_way_intersection = [7, 10, 16]
+    upper_half = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    middle_square = [2, 3, 7, 15, 16, 17, 10]
+    inner_square = [4, 5, 3, 9, 12, 13, 14]
+
+    for index in middle_square:
+        if board[index] == 'W':
+            middle_square_white_over_black += 1
+        elif board[index] == 'B':
+            middle_square_white_over_black -= 1
+
+    for index in inner_square:
+        if board[index] == 'W':
+            inner_square_white_over_black += 1
+        elif board[index] == 'B':
+            inner_square_white_over_black -= 1
+
+    for index in three_way_intersection:
+        if board[index] == 'W':
+            three_way_white_over_black += 1
+        elif board[index] == 'B':
+            three_way_white_over_black -= 1
+
+    for index in four_way_intersection:
+        if board[index] == 'W':
+            four_way_white_over_black += 1
+        elif board[index] == 'B':
+            four_way_white_over_black -= 1
+
+    for index in upper_half:
+        if board[index] == 'W':
+            upper_half_white_over_black += 1
+        elif board[index] == 'B':
+            upper_half_white_over_black -= 1
+
+    return three_way_white_over_black, four_way_white_over_black, upper_half_white_over_black, middle_square_white_over_black, inner_square_white_over_black
+
 def static_estimation_opening(board):
     num_white_pieces, num_black_pieces = count_pieces(board)
     return num_white_pieces - num_black_pieces
@@ -439,88 +554,97 @@ def static_estimation_mid(board):
     else:
         return 1000 * (num_white_pieces - num_black_pieces) - num_black_moves
 
+def static_estimation_opening_improved(board):
+
+    static_estimate = 0
+    num_white_pieces, num_black_pieces = count_pieces(board)
+
+    (three_way_white_over_black,
+     four_way_white_over_black,
+     upper_half_white_over_black,
+     middle_square_white_over_black,
+     inner_square_white_over_black) = count_positional_advantage(board)
+
+    # Value from having more pieces than your opponent
+    static_estimate += 5000 * (num_white_pieces - num_black_pieces)
+
+    # Value from having more valuable nodes than your opponent
+    static_estimate += 100 * three_way_white_over_black
+    static_estimate += 150 * four_way_white_over_black
+    static_estimate += 10 * upper_half_white_over_black
+    static_estimate += 20 * middle_square_white_over_black
+    static_estimate += 30 * inner_square_white_over_black
+
+    # Value from having more moves than your opponent in mid-game
+    num_white_moves, num_black_moves = count_moves(board)
+    static_estimate += 200 * (num_white_moves - num_black_moves)
+
+    # # Value from having more open and potential mills
+    white_over_black_open_mill_count, white_over_black_potential_mill_count, white_over_black_closed_mill_count = count_open_potential_mills(board)
+
+    # print(white_over_black_open_mill_count, white_over_black_potential_mill_count, white_over_black_closed_mill_count)
+
+    static_estimate += 10000 * white_over_black_closed_mill_count
+    static_estimate += 250 * white_over_black_open_mill_count
+    static_estimate += 50 * white_over_black_potential_mill_count
+
+    return static_estimate
+
 def static_estimation_mid_improved(board):
     #
     # Win conditions
     #
-
     num_white_pieces, num_black_pieces = count_pieces(board)
     if num_black_pieces <= 2:
-        return 10000
+        return 1000000
     if num_white_pieces <= 2:
-        return -10000
+        return -1000000
 
     # Get possible list of positions generated by black move
     swapped_board = swap_pieces(board)
+    white_positions = generate_moves_mid(board)
     black_positions = generate_moves_mid(swapped_board)
     for board_index in range(0, len(black_positions)):
         black_positions[board_index] = swap_pieces(black_positions[board_index])
 
+    num_white_moves = len(white_positions)
     num_black_moves = len(black_positions)
 
     if num_black_moves == 0:
-        return 10000
+        return 1000000
 
     # Amended advantageous board valuations
     else:
         static_estimate = 0
 
-        three_way_white_over_black, four_way_white_over_black, upper_half_white_over_black = intersection_difference(
-            board)
+        (three_way_white_over_black,
+         four_way_white_over_black,
+         upper_half_white_over_black,
+         middle_square_white_over_black,
+         inner_square_white_over_black) = count_positional_advantage(board)
+
+        # Value from having more pieces than your opponent
+        static_estimate += 10000 * (num_white_pieces - num_black_pieces)
 
         # Value from having more valuable nodes than your opponent
-        static_estimate += 60 * three_way_white_over_black
-        static_estimate += 100 * four_way_white_over_black
-        static_estimate += 50 * upper_half_white_over_black
+        static_estimate += 100 * three_way_white_over_black
+        static_estimate += 150 * four_way_white_over_black
+        static_estimate += 15 * upper_half_white_over_black
+        static_estimate += 20 * middle_square_white_over_black
+        static_estimate += 30 * inner_square_white_over_black
 
-        return 1000 * (num_white_pieces - num_black_pieces) - num_black_moves
+        # Value from having more moves than your opponent in mid-game
+        num_white_moves, num_black_moves = count_moves(board)
+        static_estimate += 300 * (num_white_moves - num_black_moves)
 
+        # Value from having more open and potential mills
+        white_over_black_open_mill_count, white_over_black_potential_mill_count, white_over_black_closed_mill_count = count_open_potential_mills(
+            board)
+        static_estimate += 1000 * white_over_black_closed_mill_count
+        static_estimate += 250 * white_over_black_open_mill_count
+        static_estimate += 350 * white_over_black_potential_mill_count
 
-def static_estimation_opening_improved(board):
-
-    static_estimate = 0
-    num_white_pieces, num_black_pieces = count_pieces(board)
-    three_way_white_over_black, four_way_white_over_black, upper_half_white_over_black = intersection_difference(board)
-
-    # Value from having more pieces than your opponent
-    static_estimate += 20 * (num_white_pieces - num_black_pieces)
-
-    # Value from having more valuable nodes than your opponent
-    static_estimate += 2 * three_way_white_over_black
-    static_estimate += 3 * four_way_white_over_black
-    static_estimate += 1 * upper_half_white_over_black
-
-    return static_estimate
-
-def intersection_difference(board):
-
-    three_way_white_over_black = 0
-    four_way_white_over_black = 0
-    upper_half_white_over_black = 0
-
-    three_way_intersection = [6, 8, 9, 11, 13, 19]
-    four_way_intersection = [7, 10, 16]
-    upper_half = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-
-    for index in three_way_intersection:
-        if board[index] == 'W':
-            three_way_white_over_black += 1
-        elif board[index] == 'B':
-            three_way_white_over_black -= 1
-
-    for index in four_way_intersection:
-        if board[index] == 'W':
-            four_way_white_over_black += 1
-        elif board[index] == 'B':
-            four_way_white_over_black -= 1
-
-    for index in upper_half:
-        if board[index] == 'W':
-            upper_half_white_over_black += 1
-        elif board[index] == 'B':
-            upper_half_white_over_black -= 1
-
-    return three_way_white_over_black, four_way_white_over_black, upper_half_white_over_black
+        return static_estimate
 
 def output_board_to_txt(array, filename):
     # Create the output directory if it doesn't exist
