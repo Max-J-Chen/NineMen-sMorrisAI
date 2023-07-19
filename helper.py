@@ -3,6 +3,7 @@ from tkinter import filedialog
 import os
 import sys
 
+
 def read_file_contents():
     # Get the root directory of the executable
     root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -33,6 +34,7 @@ def read_file_contents():
 
     return array
 
+
 def print_board(p):
     board = [
         [p[18], "-----------", p[19], "-----------", p[20]],
@@ -53,8 +55,10 @@ def print_board(p):
     for row in board:
         print(''.join(row))
 
+
 def generate_moves_opening(position):
     return generate_add(position)
+
 
 def generate_moves_mid(board):
     num_white_pieces, num_black_pieces = count_pieces(board)
@@ -63,6 +67,7 @@ def generate_moves_mid(board):
     else:
         return generate_move(board)
 
+
 def generate_moves_opening_black(position):
     swapped_board = swap_pieces(position)
     possible_positions = generate_moves_opening(swapped_board)
@@ -70,12 +75,14 @@ def generate_moves_opening_black(position):
         possible_positions[board_index] = swap_pieces(possible_positions[board_index])
     return possible_positions
 
+
 def generate_moves_mid_black(board):
     swapped_board = swap_pieces(board)
     possible_positions = generate_moves_mid(swapped_board)
     for board_index in range(0, len(possible_positions)):
         possible_positions[board_index] = swap_pieces(possible_positions[board_index])
     return possible_positions
+
 
 def generate_add(board):
     possible_boards = []
@@ -97,6 +104,7 @@ def generate_add(board):
                 possible_boards.append(board_copy)
 
     return possible_boards
+
 
 def generate_hopping(board):
     possible_boards = []
@@ -120,6 +128,7 @@ def generate_hopping(board):
 
     return possible_boards
 
+
 def generate_remove(board, possible_boards):
     num_positions_added = 0
 
@@ -139,6 +148,7 @@ def generate_remove(board, possible_boards):
     # No positions were added
     if num_positions_added == 0:
         possible_boards.append(board)
+
 
 def generate_move(board):
     possible_boards = []
@@ -164,6 +174,7 @@ def generate_move(board):
                         possible_boards.append(board_copy)
 
     return possible_boards
+
 
 def close_mill(location_index, board):
     player_color = board[location_index]
@@ -347,6 +358,7 @@ def close_mill(location_index, board):
 
     return False
 
+
 def neighbors(location_index):
     if location_index == 0:
         return [1, 6]
@@ -391,6 +403,7 @@ def neighbors(location_index):
     else:
         return [11, 19]
 
+
 def count_pieces(board):
     num_white_pieces = 0
     num_black_pieces = 0
@@ -403,6 +416,7 @@ def count_pieces(board):
 
     return num_white_pieces, num_black_pieces
 
+
 def swap_pieces(board):
     board_copy = board.copy()
 
@@ -413,6 +427,7 @@ def swap_pieces(board):
             board_copy[index] = 'W'
 
     return board_copy
+
 
 def count_open_potential_mills(board):
     # Define mill patterns as sets of board positions
@@ -428,6 +443,8 @@ def count_open_potential_mills(board):
     white_potential_mill_count = 0
     black_open_mill_count = 0
     black_potential_mill_count = 0
+    white_blocked_by_black_count = 0
+    black_blocked_by_white_count = 0
 
     # Iterate through each pattern
     for pattern in mill_patterns:
@@ -452,6 +469,11 @@ def count_open_potential_mills(board):
         elif black_piece_count == 3:
             black_closed_mill_count += 1
 
+        if white_piece_count == 2 and black_piece_count == 1:
+            white_blocked_by_black_count += 1
+        elif black_piece_count == 2 and white_piece_count == 1:
+            black_blocked_by_white_count += 1
+
         # Add to open mill count if 2 positions are controlled by White and 1 position is empty
         if white_piece_count == 2 and empty_count == 1:
             white_open_mill_count += 1
@@ -462,6 +484,8 @@ def count_open_potential_mills(board):
                 # Check if controlled by white and not in the previous mill pattern
                 if board[neighbor] == 'W' and neighbor not in pattern:
                     white_potential_mill_count += 1
+
+
 
         # Add to open mill count if 2 positions are controlled by White and 1 position is empty
         elif black_piece_count == 2 and empty_count == 1:
@@ -474,7 +498,11 @@ def count_open_potential_mills(board):
                 if board[neighbor] == 'B' and neighbor not in pattern:
                     black_potential_mill_count += 1
 
-    return white_open_mill_count - black_open_mill_count, white_potential_mill_count - black_potential_mill_count, white_closed_mill_count - black_closed_mill_count
+    return (white_open_mill_count - black_open_mill_count,
+            white_potential_mill_count - black_potential_mill_count,
+            white_closed_mill_count - black_closed_mill_count,
+            black_blocked_by_white_count - white_blocked_by_black_count)
+
 
 def count_moves(board):
     swapped_board = swap_pieces(board)
@@ -483,8 +511,8 @@ def count_moves(board):
 
     return white_positions, black_positions
 
-def count_positional_advantage(board):
 
+def count_positional_advantage(board):
     three_way_white_over_black = 0
     four_way_white_over_black = 0
     upper_half_white_over_black = 0
@@ -529,9 +557,11 @@ def count_positional_advantage(board):
 
     return three_way_white_over_black, four_way_white_over_black, upper_half_white_over_black, middle_square_white_over_black, inner_square_white_over_black
 
+
 def static_estimation_opening(board):
     num_white_pieces, num_black_pieces = count_pieces(board)
     return num_white_pieces - num_black_pieces
+
 
 def static_estimation_mid(board):
     num_white_pieces, num_black_pieces = count_pieces(board)
@@ -554,8 +584,8 @@ def static_estimation_mid(board):
     else:
         return 1000 * (num_white_pieces - num_black_pieces) - num_black_moves
 
-def static_estimation_opening_improved(board):
 
+def static_estimation_opening_improved(board):
     static_estimate = 0
     num_white_pieces, num_black_pieces = count_pieces(board)
 
@@ -580,15 +610,19 @@ def static_estimation_opening_improved(board):
     static_estimate += 200 * (num_white_moves - num_black_moves)
 
     # # Value from having more open and potential mills
-    white_over_black_open_mill_count, white_over_black_potential_mill_count, white_over_black_closed_mill_count = count_open_potential_mills(board)
+    (white_over_black_open_mill_count,
+     white_over_black_potential_mill_count,
+     white_over_black_closed_mill_count,
+     white_blocking_over_black) = count_open_potential_mills(board)
 
     # print(white_over_black_open_mill_count, white_over_black_potential_mill_count, white_over_black_closed_mill_count)
-
+    static_estimate += 2000 * white_blocking_over_black
     static_estimate += 10000 * white_over_black_closed_mill_count
     static_estimate += 250 * white_over_black_open_mill_count
     static_estimate += 50 * white_over_black_potential_mill_count
 
     return static_estimate
+
 
 def static_estimation_mid_improved(board):
     #
@@ -635,16 +669,25 @@ def static_estimation_mid_improved(board):
 
         # Value from having more moves than your opponent in mid-game
         num_white_moves, num_black_moves = count_moves(board)
-        static_estimate += 300 * (num_white_moves - num_black_moves)
+
+        if num_black_pieces != 4:
+            static_estimate += 300 * (num_white_moves - num_black_moves)
+        else:
+            static_estimate += 1000 * (num_white_moves - num_black_moves)
 
         # Value from having more open and potential mills
-        white_over_black_open_mill_count, white_over_black_potential_mill_count, white_over_black_closed_mill_count = count_open_potential_mills(
-            board)
+        (white_over_black_open_mill_count,
+         white_over_black_potential_mill_count,
+         white_over_black_closed_mill_count,
+         white_blocking_over_black) = count_open_potential_mills(board)
+
+        # static_estimate += 225 * white_blocking_over_black
         static_estimate += 1000 * white_over_black_closed_mill_count
         static_estimate += 250 * white_over_black_open_mill_count
         static_estimate += 350 * white_over_black_potential_mill_count
 
         return static_estimate
+
 
 def output_board_to_txt(array, filename):
     # Create the output directory if it doesn't exist
@@ -658,6 +701,7 @@ def output_board_to_txt(array, filename):
     filepath = os.path.join(output_dir, filename)
     with open(filepath, 'w') as file:
         file.write(array_string)
+
 
 def verify_input(array):
     if len(array) != 21:

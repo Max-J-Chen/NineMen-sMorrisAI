@@ -89,7 +89,7 @@ def are_arrays_equal(arr1, arr2):
     return set(arr1) == set(arr2)
 
 
-def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color, pos=None, root=None):
+def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color, pos=None, black_turn_number=None):
     # Reinitialize parameters
     global positions_evaluated
     positions_evaluated = 0
@@ -125,7 +125,7 @@ def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color,
                               max_depth=int(max_depth),
                               phase=phase,
                               static_estimate=static_estimate,
-                              tree=tree)
+                              black_turn_number_param=black_turn_number)
 
     # Run minimax
     max_min(tree, float('-inf'), float('inf'))
@@ -141,6 +141,10 @@ def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color,
     print()
 
     # Swap best board if player is black
+    if tree.best_child is None:
+        print("There are no possible moves.")
+        return pos, None
+
     best_board = tree.best_child.board
     if player_color == "Black":
         best_board = helper.swap_pieces(tree.best_child.board)
@@ -164,7 +168,7 @@ def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color,
     # Store output
     helper.output_board_to_txt(best_board, output_file_name)
 
-    # # Print predicted turns
+    # Print predicted turns
     # print("\n________________________________________________")
     # print("Predicted Turns: ")
     #

@@ -7,7 +7,7 @@ from PIL import Image, ImageTk
 import os
 import threading
 
-def display_image():
+def display_UI():
     root = tk.Tk()
     root.title("Image Display")
 
@@ -275,7 +275,6 @@ def display_image():
                                                  output_file_name="MiniMaxGameOutput.txt",
                                                  player_color="White",
                                                  pos=input_board)
-
         elif AI_heuristic.get() == 'ABOpening':
             if selected_option.get() == 'White':
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
@@ -329,7 +328,7 @@ def display_image():
                                                      output_file_name="ABGameOutputImproved.txt",
                                                      player_color="Black",
                                                      pos=input_board,
-                                                     root=tree)
+                                                     black_turn_number=black_piece_count)
             else:
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
                                                      phase=2,
@@ -337,7 +336,7 @@ def display_image():
                                                      output_file_name="ABGameOutputImproved.txt",
                                                      player_color="White",
                                                      pos=input_board,
-                                                     root=tree)
+                                                     black_turn_number=black_piece_count)
         elif AI_heuristic.get() == 'ABOpeningImproved':
             if selected_option.get() == 'White':
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
@@ -346,7 +345,7 @@ def display_image():
                                                      output_file_name="ABGameOpeningImproved.txt",
                                                      player_color="Black",
                                                      pos=input_board,
-                                                     root=tree)
+                                                     black_turn_number=black_piece_count)
             else:
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
                                                      phase=1,
@@ -354,7 +353,7 @@ def display_image():
                                                      output_file_name="ABGameOpeningImproved.txt",
                                                      player_color="White",
                                                      pos=input_board,
-                                                     root=tree)
+                                                     black_turn_number=black_piece_count)
         else:
             if selected_option.get() == 'White':
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
@@ -423,7 +422,7 @@ def display_image():
     field_label.pack(pady=10)
 
     # Create the field in the sidebar
-    default_value = 3  # Set the default value
+    default_value = 4  # Set the default value
 
     field_entry = tk.Entry(sidebar_frame)
     field_entry.insert(tk.END, default_value)  # Insert the default value into the entry widget
@@ -451,5 +450,6 @@ def display_image():
     # Run the Tkinter event loop
     root.mainloop()
 
+
 # Call the function to display the image
-display_image()
+display_UI()
