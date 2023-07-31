@@ -7,9 +7,10 @@ from PIL import Image, ImageTk
 import os
 import threading
 
+
 def display_UI():
     root = tk.Tk()
-    root.title("Image Display")
+    root.title("Nine Men's Morris Variant")
 
     # Get the path to the image
     image_path = os.path.join(os.path.dirname(__file__), 'resources', 'MorrisBoardBlank.jpg')
@@ -45,9 +46,13 @@ def display_UI():
     input_board = ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x',
                    'x']
 
+    previous_board = ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x',
+                      'x']
+
     # Piece counts for changing AI modes
     white_piece_count = 0
     black_piece_count = 0
+    turn_count = 0
 
     # Create a queue to receive the results of AI
     result_queue = queue.Queue()
@@ -115,7 +120,7 @@ def display_UI():
 
         clear_board()
         draw_board()
-        print(input_board)  # Print the updated board
+        print(''.join(map(str, input_board)))  # Print the updated board
 
     # Function to clear the board and delete the circles
     def clear_board():
@@ -153,12 +158,14 @@ def display_UI():
         nonlocal input_board
         nonlocal white_piece_count
         nonlocal black_piece_count
+        nonlocal turn_count
 
-        input_board = ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x','x','x']
+        input_board = ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x',
+                       'x', 'x']
+
         tree = None
 
-        white_piece_count = 0
-        black_piece_count = 0
+        turn_count = 0
 
         clear_board()
         draw_board()
@@ -181,6 +188,16 @@ def display_UI():
     def on_end_turn_button():
 
         nonlocal input_board
+        nonlocal previous_board
+        nonlocal white_piece_count
+        nonlocal black_piece_count
+        nonlocal turn_count
+
+        # Don't increment turn count if starting first move as black
+        if turn_count != 0 or selected_option.get() == 'White':
+            turn_count += 1
+
+        update_label_text()
 
         thread = threading.Thread(target=run_AI, args=(result_queue,))
         thread.start()
@@ -189,34 +206,27 @@ def display_UI():
 
     def check_result():
         nonlocal input_board
+        nonlocal previous_board
         nonlocal result_queue
-        nonlocal white_piece_count
-        nonlocal black_piece_count
+
+        nonlocal turn_count
 
         try:
-            white_old_count = input_board.count('W')
-            black_old_count = input_board.count('B')
 
             # Attempt to get the result from the queue
             AI_board = result_queue.get(block=False)
 
-            white_new_count = AI_board.count('W')
-            black_new_count = AI_board.count('B')
-
-            if white_new_count > white_old_count:
-                white_piece_count += 1
-
-            if black_new_count > black_old_count:
-                black_piece_count += 1
+            turn_count += 1
 
             input_board = AI_board
+            previous_board = AI_board.copy()
 
         except queue.Empty:
             # If the queue is empty, re-check after 100 milliseconds
             root.after(100, check_result)
             return
 
-        if black_piece_count > 7 or white_piece_count > 7:
+        if turn_count > 16:
             AI_heuristic.set(options2[7])
 
         update_label_text()
@@ -238,8 +248,6 @@ def display_UI():
 
         nonlocal input_board
         nonlocal tree
-        nonlocal white_piece_count
-        nonlocal black_piece_count
 
         AI_board = None
         i = int(field_entry.get())
@@ -328,7 +336,7 @@ def display_UI():
                                                      output_file_name="ABGameOutputImproved.txt",
                                                      player_color="Black",
                                                      pos=input_board,
-                                                     black_turn_number=black_piece_count)
+                                                     turn_count=turn_count)
             else:
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
                                                      phase=2,
@@ -336,7 +344,7 @@ def display_UI():
                                                      output_file_name="ABGameOutputImproved.txt",
                                                      player_color="White",
                                                      pos=input_board,
-                                                     black_turn_number=black_piece_count)
+                                                     turn_count=turn_count)
         elif AI_heuristic.get() == 'ABOpeningImproved':
             if selected_option.get() == 'White':
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
@@ -345,7 +353,7 @@ def display_UI():
                                                      output_file_name="ABGameOpeningImproved.txt",
                                                      player_color="Black",
                                                      pos=input_board,
-                                                     black_turn_number=black_piece_count)
+                                                     turn_count=turn_count)
             else:
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
                                                      phase=1,
@@ -353,7 +361,7 @@ def display_UI():
                                                      output_file_name="ABGameOpeningImproved.txt",
                                                      player_color="White",
                                                      pos=input_board,
-                                                     black_turn_number=black_piece_count)
+                                                     turn_count=turn_count)
         else:
             if selected_option.get() == 'White':
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
@@ -373,28 +381,28 @@ def display_UI():
         return_queue.put(AI_board, tree)
 
     def update_label_text():
-        white_piece_count_label.config(text="White Pieces Placed: " + str(white_piece_count))
-        black_piece_count_label.config(text="Black Pieces Placed: " + str(black_piece_count))
+        turn_count_label.config(text="Turn Count: " + str(turn_count))
+        turns_left_label.config(text="Turns left until second phase: " + str(16 - turn_count))
 
     # Create a sidebar frame
     sidebar_frame = tk.Frame(root)
     sidebar_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=20, pady=20)  # Increase the padding
 
     # Create the button in the sidebar
-    load_board_button = tk.Button(sidebar_frame, text="Load Board", command=on_load_board_button)
-    load_board_button.pack(pady=10)
+    load_board_button = tk.Button(sidebar_frame, text="Load Board", command=on_load_board_button, width=20)
+    load_board_button.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the button in the sidebar
-    end_turn_button = tk.Button(sidebar_frame, text="End Turn", command=on_end_turn_button)
-    end_turn_button.pack(pady=10)
+    clear_board_button = tk.Button(sidebar_frame, text="Clear Board", command=on_clear_board_button, width=20)
+    clear_board_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the button in the sidebar
-    clear_board_button = tk.Button(sidebar_frame, text="Clear Board", command=on_clear_board_button)
-    clear_board_button.pack(pady=10)
+    end_turn_button = tk.Button(sidebar_frame, text="End Turn", command=on_end_turn_button, width=20)
+    end_turn_button.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the label and dropdown menu in the sidebar
     AI_heuristic_label = tk.Label(sidebar_frame, text="AI Type: ")
-    AI_heuristic_label.pack(pady=10)
+    AI_heuristic_label.grid(row=3, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the dropdown menu options
     options2 = ['MiniMaxOpening', 'MiniMaxGame', 'ABOpening', 'ABGame', 'MiniMaxOpeningImproved', 'MiniMaxGameImproved',
@@ -403,11 +411,23 @@ def display_UI():
     AI_heuristic.set(options2[6])  # Set the initial selected option
 
     dropdown = tk.OptionMenu(sidebar_frame, AI_heuristic, *options2)
-    dropdown.pack(pady=10)
+    dropdown.grid(row=4, column=0, padx=5, pady=5, sticky="ew")
 
-    # Create the label and dropdown menu in the sidebar
-    AI_heuristic_label = tk.Label(sidebar_frame, text="Playing as: ")
-    AI_heuristic_label.pack(pady=10)
+    # Create the field in the sidebar
+    field_label = tk.Label(sidebar_frame, text="Enter a depth value:", width=20)
+    field_label.grid(row=5, column=0, padx=5, pady=5, sticky="ew")
+
+    # Create the field in the sidebar
+    default_value = 4  # Set the default value
+
+    field_entry = tk.Entry(sidebar_frame, width=20)
+    field_entry.insert(tk.END, default_value)  # Insert the default value into the entry widget
+    field_entry.grid(row=6, column=0, padx=5, pady=5, sticky="ew")
+
+    # Create the label for player color
+    turn_count_label = tk.Label(sidebar_frame, text="Play as: ", width=20)
+    turn_count_label.grid(row=7, column=0, padx=5, pady=5, sticky="ew")
+
 
     # Create the dropdown menu options
     options = ['White', 'Black']
@@ -415,41 +435,29 @@ def display_UI():
     selected_option.set(options[0])  # Set the initial selected option
 
     dropdown = tk.OptionMenu(sidebar_frame, selected_option, *options)
-    dropdown.pack(pady=10)
+    dropdown.grid(row=8, column=0, padx=5, pady=5, sticky="ew")
 
-    # Create the field in the sidebar
-    field_label = tk.Label(sidebar_frame, text="Enter a value:")
-    field_label.pack(pady=10)
+    manual_input_field = tk.Label(sidebar_frame, text="Manual Input:", width=20)
+    manual_input_field.grid(row=9, column=0, padx=5, pady=5, sticky="ew")
 
-    # Create the field in the sidebar
-    default_value = 4  # Set the default value
-
-    field_entry = tk.Entry(sidebar_frame)
-    field_entry.insert(tk.END, default_value)  # Insert the default value into the entry widget
-    field_entry.pack(pady=10)
-
-    manual_input_field = tk.Label(sidebar_frame, text="Manual Input:")
-    manual_input_field.pack(pady=10)
-
-    manual_entry = tk.Entry(sidebar_frame)
+    manual_entry = tk.Entry(sidebar_frame, width=20)
     manual_entry.insert(tk.END, "")  # Insert the default value into the entry widget
-    manual_entry.pack(pady=10)
+    manual_entry.grid(row=10, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the button in the sidebar
-    manual_entry_button = tk.Button(sidebar_frame, text="Confirm Board", command=set_manual_entry)
-    manual_entry_button.pack(pady=10)
+    manual_entry_button = tk.Button(sidebar_frame, text="Confirm Board", command=set_manual_entry, width=20)
+    manual_entry_button.grid(row=11, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the label and dropdown menu in the sidebar
-    white_piece_count_label = tk.Label(sidebar_frame, text="White Pieces Placed: " + str(white_piece_count))
-    white_piece_count_label.pack(pady=10)
+    turn_count_label = tk.Label(sidebar_frame, text="Turn Count: " + str(turn_count), width=20)
+    turn_count_label.grid(row=12, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the label and dropdown menu in the sidebar
-    black_piece_count_label = tk.Label(sidebar_frame, text="Black Pieces Placed: " + str(black_piece_count))
-    black_piece_count_label.pack(pady=10)
+    turns_left_label = tk.Label(sidebar_frame, text="Turns left until 2nd phase: " + str(16 - turn_count), width=20)
+    turns_left_label.grid(row=13, column=0, padx=5, pady=5, sticky="ew")
 
     # Run the Tkinter event loop
     root.mainloop()
-
 
 # Call the function to display the image
 display_UI()

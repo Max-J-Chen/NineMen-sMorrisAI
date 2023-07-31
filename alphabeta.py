@@ -89,15 +89,13 @@ def are_arrays_equal(arr1, arr2):
     return set(arr1) == set(arr2)
 
 
-def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color, pos=None, black_turn_number=None):
+def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color, pos=None, turn_count=None):
     # Reinitialize parameters
     global positions_evaluated
     positions_evaluated = 0
 
     if pos is None:
         pos = helper.read_file_contents()
-
-
 
     # Time
     start_time = time.time()
@@ -125,7 +123,7 @@ def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color,
                               max_depth=int(max_depth),
                               phase=phase,
                               static_estimate=static_estimate,
-                              black_turn_number_param=black_turn_number)
+                              turn=turn_count)
 
     # Run minimax
     max_min(tree, float('-inf'), float('inf'))
@@ -169,27 +167,27 @@ def alphabeta(max_depth, phase, static_estimate, output_file_name, player_color,
     helper.output_board_to_txt(best_board, output_file_name)
 
     # Print predicted turns
-    # print("\n________________________________________________")
-    # print("Predicted Turns: ")
-    #
-    # current_node = tree
-    # turn_count = 0
-    # while current_node is not None:
-    #
-    #     if turn_count > max_depth:
-    #         break
-    #
-    #     # Swap if player is black
-    #     if player_color == "Black":
-    #         current_node.board = helper.swap_pieces(current_node.board)
-    #
-    #     print("Turn", turn_count)
-    #     helper.print_board(current_node.board)
-    #     print("Depth=", current_node.depth)
-    #     print("Static Value=", current_node.value)
-    #     print("Best Child Node=", current_node.best_child, "\n")
-    #
-    #     current_node = current_node.best_child
-    #     turn_count += 1
+    print("\n________________________________________________")
+    print("Predicted Turns: ")
+
+    current_node = tree
+    turn_count = 0
+    while current_node is not None:
+
+        if turn_count > max_depth:
+            break
+
+        # Swap if player is black
+        if player_color == "Black":
+            current_node.board = helper.swap_pieces(current_node.board)
+
+        print("Turn", turn_count)
+        helper.print_board(current_node.board)
+        print("Depth=", current_node.depth)
+        print("Static Value=", current_node.value)
+        print("Global Turn Count=", current_node.turn_count, "\n")
+
+        current_node = current_node.best_child
+        turn_count += 1
 
     return best_board, tree

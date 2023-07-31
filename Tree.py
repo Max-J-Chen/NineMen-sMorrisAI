@@ -1,33 +1,31 @@
 from queue import Queue
 import helper
 
-black_turn_number = 0
-deepest_depth = 0
+turn_count = 0
 
 class Node(object):
     count = 0
 
-    def __init__(self, board, value, depth):
+    def __init__(self, board, value, depth, turn):
         self.board = board
         self.value = value
         self.depth = depth
         self.children = []
         self.best_child = None  # Provides a path to the best node
+        self.turn_count = turn
         Node.count += 1
 
     def add_child(self, obj):
         self.children.append(obj)
 
 
-def generate_tree(board, max_depth, static_estimate, phase, black_turn_number_param=0):
-    global black_turn_number
-    global deepest_depth
-    deepest_depth = 0
-    black_turn_number = black_turn_number_param
-
+def generate_tree(board, max_depth, static_estimate, phase, turn=0):
+    # Update global turn count and deepest depth
+    global turn_count
+    turn_count = turn
 
     # Create root at given board
-    root = Node(board, value=None, depth=0)
+    root = Node(board, value=None, depth=0, turn=turn)
 
     # Determine which board generations to use
     if phase < 2:  # Opening phase
@@ -56,10 +54,7 @@ def generate_tree_recurse(cur_node, cur_depth,
                           first_player_gen_phase_2, second_player_gen_phase_2,
                           static_estimate, max_depth):
 
-    global black_turn_number
-    global deepest_depth
-
-    cur_depth = cur_depth
+    global turn_count
 
     # Base case
     if cur_depth > int(max_depth):
@@ -69,25 +64,15 @@ def generate_tree_recurse(cur_node, cur_depth,
     if cur_depth % 2 == 0:
         generator = second_player_gen_phase_1
 
-        # Determine if generator is black, if so, add to black turn counter. Only matters if opening phase
-        if generator == helper.generate_moves_opening_black and cur_depth > deepest_depth:
-            deepest_depth = cur_depth
-            black_turn_number += 1
-
         # Swap to mid-phase
-        if black_turn_number > 7:
+        if (cur_depth + turn_count) > 16:
             generator = second_player_gen_phase_2
 
     else:
         generator = first_player_gen_phase_1
 
-        # Determine if generator is black, if so, add to black turn counter. Only matters if opening phase
-        if generator == helper.generate_moves_opening_black and cur_depth > deepest_depth:
-            deepest_depth = cur_depth
-            black_turn_number += 1
-
         # Swap to mid-phase
-        if black_turn_number > 7:
+        if (cur_depth + turn_count) > 16:
             generator = first_player_gen_phase_2
 
     # Generate possible boards of current node
@@ -100,9 +85,9 @@ def generate_tree_recurse(cur_node, cur_depth,
     # Assign static estimation values and add to children list
     for board in possible_boards:
         if cur_depth == max_depth or board.count('x') == 0:
-            child_node = Node(board, value=static_estimate(board), depth=cur_depth)
+            child_node = Node(board, value=static_estimate(board), depth=cur_depth, turn=cur_depth + turn_count)
         else:
-            child_node = Node(board, value=None, depth=cur_depth)
+            child_node = Node(board, value=None, depth=cur_depth, turn=cur_depth + turn_count)
 
         cur_node.add_child(child_node)
 
@@ -110,7 +95,6 @@ def generate_tree_recurse(cur_node, cur_depth,
     for child_node in cur_node.children:
         generate_tree_recurse(child_node, cur_depth + 1, first_player_gen_phase_1, second_player_gen_phase_1,
                               first_player_gen_phase_2, second_player_gen_phase_2, static_estimate, max_depth)
-
 
 def print_tree(root):
     queue = Queue()
