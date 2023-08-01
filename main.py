@@ -19,14 +19,14 @@ def display_UI():
     image = Image.open(image_path)
 
     # Create a Tkinter-compatible photo image
-    photo = ImageTk.PhotoImage(image)
+    board_image = ImageTk.PhotoImage(image)
 
     # Create a canvas with the image
     canvas = tk.Canvas(root, width=image.width, height=image.height)
     canvas.pack(side=tk.LEFT)
 
     # Display the image on the canvas
-    canvas.create_image(0, 0, anchor=tk.NW, image=photo)
+    canvas.create_image(0, 0, anchor=tk.NW, image=board_image)
 
     # Define the circle parameters
     radius = 20
@@ -46,12 +46,7 @@ def display_UI():
     input_board = ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x',
                    'x']
 
-    previous_board = ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x',
-                      'x']
-
-    # Piece counts for changing AI modes
-    white_piece_count = 0
-    black_piece_count = 0
+    # Turn count for changing AI modes
     turn_count = 0
 
     # Create a queue to receive the results of AI
@@ -133,9 +128,7 @@ def display_UI():
 
     # Function to draw the board with circles based on the input_board
     def draw_board():
-
         nonlocal input_board
-
         for index, element in enumerate(input_board):
             x, y = coordinates[index]
             draw_filled_circle(x, y, element, index)
@@ -143,7 +136,6 @@ def display_UI():
             if element == 'x':
                 box = canvas.create_rectangle(x - radius, y - radius, x + radius, y + radius,
                                               fill='', outline='', tags=index)
-
                 canvas.tag_bind(box, '<Enter>', lambda event, i=index: on_box_hover(event, i))
                 canvas.tag_bind(box, '<Leave>', lambda event, i=index: on_box_hover_out(event, i))
                 canvas.tag_bind(box, '<Button-1>', lambda event, i=index: on_box_click(event, i))
@@ -156,22 +148,15 @@ def display_UI():
     def on_clear_board_button():
         nonlocal tree
         nonlocal input_board
-        nonlocal white_piece_count
-        nonlocal black_piece_count
         nonlocal turn_count
 
         input_board = ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x',
                        'x', 'x']
-
         tree = None
-
         turn_count = 0
-
         clear_board()
         draw_board()
-
         update_label_text()
-
         AI_heuristic.set(options2[6])
 
     # Button click event handler
@@ -188,9 +173,6 @@ def display_UI():
     def on_end_turn_button():
 
         nonlocal input_board
-        nonlocal previous_board
-        nonlocal white_piece_count
-        nonlocal black_piece_count
         nonlocal turn_count
 
         # Don't increment turn count if starting first move as black
@@ -206,20 +188,15 @@ def display_UI():
 
     def check_result():
         nonlocal input_board
-        nonlocal previous_board
         nonlocal result_queue
 
         nonlocal turn_count
 
         try:
-
             # Attempt to get the result from the queue
             AI_board = result_queue.get(block=False)
-
             turn_count += 1
-
             input_board = AI_board
-            previous_board = AI_board.copy()
 
         except queue.Empty:
             # If the queue is empty, re-check after 100 milliseconds
@@ -245,7 +222,6 @@ def display_UI():
         draw_board()
 
     def run_AI(return_queue):
-
         nonlocal input_board
         nonlocal tree
 
@@ -428,7 +404,6 @@ def display_UI():
     turn_count_label = tk.Label(sidebar_frame, text="Play as: ", width=20)
     turn_count_label.grid(row=7, column=0, padx=5, pady=5, sticky="ew")
 
-
     # Create the dropdown menu options
     options = ['White', 'Black']
     selected_option = tk.StringVar()
@@ -458,6 +433,7 @@ def display_UI():
 
     # Run the Tkinter event loop
     root.mainloop()
+
 
 # Call the function to display the image
 display_UI()
