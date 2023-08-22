@@ -11,6 +11,7 @@ import threading
 def display_UI():
     root = tk.Tk()
     root.title("Nine Men's Morris Variant")
+    root.resizable(False, False)
 
     # Get the path to the image
     image_path = os.path.join(os.path.dirname(__file__), 'resources', 'MorrisBoardBlank.jpg')
@@ -36,11 +37,11 @@ def display_UI():
                    (365, 444), (636, 444), (769, 444), (903, 442), (366, 311), (499, 308), (634, 309), (232, 176),
                    (500, 174), (768, 175), (97, 41), (499, 42), (903, 41)]
 
-    # List to store the circle objects
-    circle_objects = []
+    # List to store the player pieces
+    player_pieces = []
 
-    # List to store the box objects
-    box_objects = []
+    # List to store the ghost pieces that indicate if a player can place a piece at a position
+    ghost_pieces = []
 
     # Ordered array of size 21 with elements 'x', 'W', or 'B'
     input_board = ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x',
@@ -71,7 +72,7 @@ def display_UI():
         circle = canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
                                     fill=circle_color, outline=outline_color, width=outline_width)
 
-        circle_objects.append(circle)  # Store the circle object
+        player_pieces.append(circle)  # Store the circle object
 
         # Bind the click event to the circle
         canvas.tag_bind(circle, '<Button-1>', lambda event, i=index: on_circle_click(event, i))
@@ -82,22 +83,22 @@ def display_UI():
             # Replace the element in the input_board array with 'x'
             input_board[index] = 'x'
             clear_board()
-            draw_board()
+            draw_player_pieces()
 
             print(input_board)
 
     # Function to handle mouse hover over a box
     def on_box_hover(event, index):
         if input_board[index] == 'x':
-            canvas.itemconfig(box_objects[index], fill='')  # Change the box color on hover
-            canvas.tag_raise(box_objects[index])  # Raise the box to be on top
+            canvas.itemconfig(ghost_pieces[index], fill='red')  # Change the box color on hover
+            canvas.tag_raise(ghost_pieces[index])  # Raise the box to be on top
 
     # Function to handle mouse hover out of a box
     def on_box_hover_out(event, index):
         if input_board[index] == 'x':
-            canvas.itemconfig(box_objects[index], fill='', outline='')  # Reset the box color
+            canvas.itemconfig(ghost_pieces[index], fill='', outline='')  # Reset the box color
         else:
-            canvas.itemconfig(box_objects[index], fill='',
+            canvas.itemconfig(ghost_pieces[index], fill='',
                               outline='')  # Keep the box color for non-'x' elements
 
     # Function to handle box click event
@@ -110,28 +111,26 @@ def display_UI():
         elif selected_option.get() == 'Black':
             input_board[index] = 'B'  # Update the input board with 'B'
 
-        # Delete the box object from the canvas
-        canvas.delete(box_objects[index])
-
         clear_board()
-        draw_board()
+        draw_player_pieces()
         print(''.join(map(str, input_board)))  # Print the updated board
 
     # Function to clear the board and delete the circles
     def clear_board():
-        for circle in circle_objects:
+        nonlocal ghost_pieces
+
+        for circle in player_pieces:
             canvas.delete(circle)
-        circle_objects.clear()
+        player_pieces.clear()
 
-        for box in box_objects:
-            canvas.delete(box)
+        # for box in ghost_pieces:
+        #     print("Deleted ghost piece")
+        #     canvas.delete(box)
+        # ghost_pieces = []
 
-    # Function to draw the board with circles based on the input_board
-    def draw_board():
-        nonlocal input_board
+    def draw_ghost_pieces():
         for index, element in enumerate(input_board):
             x, y = coordinates[index]
-            draw_filled_circle(x, y, element, index)
 
             if element == 'x':
                 box = canvas.create_rectangle(x - radius, y - radius, x + radius, y + radius,
@@ -139,11 +138,19 @@ def display_UI():
                 canvas.tag_bind(box, '<Enter>', lambda event, i=index: on_box_hover(event, i))
                 canvas.tag_bind(box, '<Leave>', lambda event, i=index: on_box_hover_out(event, i))
                 canvas.tag_bind(box, '<Button-1>', lambda event, i=index: on_box_click(event, i))
+                ghost_pieces.append(box)  # Store the box object
 
-                box_objects.append(box)  # Store the box object
+    draw_ghost_pieces()
+
+    # Function to draw the board with circles based on the input_board
+    def draw_player_pieces():
+        nonlocal input_board
+        for index, element in enumerate(input_board):
+            x, y = coordinates[index]
+            draw_filled_circle(x, y, element, index)
 
     # Create the boxes on each coordinate
-    draw_board()
+    draw_player_pieces()
 
     def on_clear_board_button():
         nonlocal tree
@@ -155,9 +162,9 @@ def display_UI():
         tree = None
         turn_count = 0
         clear_board()
-        draw_board()
+        draw_player_pieces()
         update_label_text()
-        AI_heuristic.set(options2[6])
+        AI_heuristic.set(options2[0])
 
     # Button click event handler
     def on_load_board_button():
@@ -168,7 +175,7 @@ def display_UI():
             return  # Skip if the input board is invalid
 
         clear_board()
-        draw_board()
+        draw_player_pieces()
 
     def on_end_turn_button():
 
@@ -189,7 +196,6 @@ def display_UI():
     def check_result():
         nonlocal input_board
         nonlocal result_queue
-
         nonlocal turn_count
 
         try:
@@ -210,16 +216,7 @@ def display_UI():
 
         # If we got the result, update the GUI
         clear_board()
-        draw_board()
-
-    def set_manual_entry():
-        nonlocal input_board
-        array = list(manual_entry.get())
-        if helper.verify_input(array):
-            input_board = array
-
-        clear_board()
-        draw_board()
+        draw_player_pieces()
 
     def run_AI(return_queue):
         nonlocal input_board
@@ -228,83 +225,7 @@ def display_UI():
         AI_board = None
         i = int(field_entry.get())
 
-        if AI_heuristic.get() == 'MiniMaxOpening':
-            if selected_option.get() == 'White':
-                AI_board, tree = minimax.minimax(max_depth=i,
-                                                 phase=1,
-                                                 static_estimate=helper.static_estimation_opening,
-                                                 output_file_name="MiniMaxOpeningOutput.txt",
-                                                 player_color="Black",
-                                                 pos=input_board)
-            else:
-                AI_board, tree = minimax.minimax(max_depth=i,
-                                                 phase=1,
-                                                 static_estimate=helper.static_estimation_opening,
-                                                 output_file_name="MiniMaxOpeningOutput.txt",
-                                                 player_color="White",
-                                                 pos=input_board)
-
-        elif AI_heuristic.get() == 'MiniMaxGame':
-            if selected_option.get() == 'White':
-                AI_board, tree = minimax.minimax(max_depth=i,
-                                                 phase=2,
-                                                 static_estimate=helper.static_estimation_mid,
-                                                 output_file_name="MiniMaxGameOutput.txt",
-                                                 player_color="Black",
-                                                 pos=input_board)
-            else:
-                AI_board, tree = minimax.minimax(max_depth=i,
-                                                 phase=2,
-                                                 static_estimate=helper.static_estimation_mid,
-                                                 output_file_name="MiniMaxGameOutput.txt",
-                                                 player_color="White",
-                                                 pos=input_board)
-        elif AI_heuristic.get() == 'ABOpening':
-            if selected_option.get() == 'White':
-                AI_board, tree = alphabeta.alphabeta(max_depth=i,
-                                                     phase=1,
-                                                     static_estimate=helper.static_estimation_opening,
-                                                     output_file_name="ABOpeningOutput.txt",
-                                                     player_color="Black",
-                                                     pos=input_board)
-            else:
-                AI_board, tree = alphabeta.alphabeta(max_depth=i,
-                                                     phase=1,
-                                                     static_estimate=helper.static_estimation_opening,
-                                                     output_file_name="ABOpeningOutput.txt",
-                                                     player_color="White",
-                                                     pos=input_board)
-        elif AI_heuristic.get() == 'MiniMaxOpeningImproved':
-            if selected_option.get() == 'White':
-                AI_board, tree = minimax.minimax(max_depth=i,
-                                                 phase=1,
-                                                 static_estimate=helper.static_estimation_opening_improved,
-                                                 output_file_name="MiniMaxOpeningOutputImproved.txt",
-                                                 player_color="Black",
-                                                 pos=input_board)
-            else:
-                AI_board, tree = minimax.minimax(max_depth=i,
-                                                 phase=1,
-                                                 static_estimate=helper.static_estimation_opening_improved,
-                                                 output_file_name="MiniMaxOpeningOutputImproved.txt",
-                                                 player_color="White",
-                                                 pos=input_board)
-        elif AI_heuristic.get() == 'MiniMaxGameImproved':
-            if selected_option.get() == 'White':
-                AI_board, tree = minimax.minimax(max_depth=i,
-                                                 phase=2,
-                                                 static_estimate=helper.static_estimation_mid_improved,
-                                                 output_file_name="MiniMaxGameOutputImproved.txt",
-                                                 player_color="Black",
-                                                 pos=input_board)
-            else:
-                AI_board, tree = minimax.minimax(max_depth=i,
-                                                 phase=2,
-                                                 static_estimate=helper.static_estimation_mid_improved,
-                                                 output_file_name="MiniMaxGameOutputImproved.txt",
-                                                 player_color="White",
-                                                 pos=input_board)
-        elif AI_heuristic.get() == 'ABGameImproved':
+        if AI_heuristic.get() == 'ABGameImproved':
             if selected_option.get() == 'White':
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
                                                      phase=2,
@@ -358,7 +279,7 @@ def display_UI():
 
     def update_label_text():
         turn_count_label.config(text="Turn Count: " + str(turn_count))
-        turns_left_label.config(text="Turns left until second phase: " + str(16 - turn_count))
+        turns_left_label.config(text="Phase 1 Remaining Turns: " + str(16 - turn_count))
 
     # Create a sidebar frame
     sidebar_frame = tk.Frame(root)
@@ -381,10 +302,9 @@ def display_UI():
     AI_heuristic_label.grid(row=3, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the dropdown menu options
-    options2 = ['MiniMaxOpening', 'MiniMaxGame', 'ABOpening', 'ABGame', 'MiniMaxOpeningImproved', 'MiniMaxGameImproved',
-                'ABOpeningImproved', 'ABGameImproved']
+    options2 = ['ABOpeningImproved', 'ABGameImproved']
     AI_heuristic = tk.StringVar()
-    AI_heuristic.set(options2[6])  # Set the initial selected option
+    AI_heuristic.set(options2[0])  # Set the initial selected option
 
     dropdown = tk.OptionMenu(sidebar_frame, AI_heuristic, *options2)
     dropdown.grid(row=4, column=0, padx=5, pady=5, sticky="ew")
@@ -397,7 +317,7 @@ def display_UI():
     default_value = 4  # Set the default value
 
     field_entry = tk.Entry(sidebar_frame, width=20)
-    field_entry.insert(tk.END, default_value)  # Insert the default value into the entry widget
+    field_entry.insert(tk.END, str(default_value))  # Insert the default value into the entry widget
     field_entry.grid(row=6, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the label for player color
@@ -412,23 +332,12 @@ def display_UI():
     dropdown = tk.OptionMenu(sidebar_frame, selected_option, *options)
     dropdown.grid(row=8, column=0, padx=5, pady=5, sticky="ew")
 
-    manual_input_field = tk.Label(sidebar_frame, text="Manual Input:", width=20)
-    manual_input_field.grid(row=9, column=0, padx=5, pady=5, sticky="ew")
-
-    manual_entry = tk.Entry(sidebar_frame, width=20)
-    manual_entry.insert(tk.END, "")  # Insert the default value into the entry widget
-    manual_entry.grid(row=10, column=0, padx=5, pady=5, sticky="ew")
-
-    # Create the button in the sidebar
-    manual_entry_button = tk.Button(sidebar_frame, text="Confirm Board", command=set_manual_entry, width=20)
-    manual_entry_button.grid(row=11, column=0, padx=5, pady=5, sticky="ew")
-
     # Create the label and dropdown menu in the sidebar
     turn_count_label = tk.Label(sidebar_frame, text="Turn Count: " + str(turn_count), width=20)
     turn_count_label.grid(row=12, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the label and dropdown menu in the sidebar
-    turns_left_label = tk.Label(sidebar_frame, text="Turns left until 2nd phase: " + str(16 - turn_count), width=20)
+    turns_left_label = tk.Label(sidebar_frame, text="Phase 1 Remaining Turns: " + str(16 - turn_count), width=20)
     turns_left_label.grid(row=13, column=0, padx=5, pady=5, sticky="ew")
 
     # Run the Tkinter event loop
