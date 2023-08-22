@@ -56,8 +56,11 @@ def display_UI():
     # Create a tree variable to hold previous trees
     tree = None
 
+    color_grey = "#808080"  # Hexadecimal color code for grey
+    color_light_grey = "#D3D3D3"  # Hexadecimal color code for light grey
+
     # Function to draw a filled circle at the given coordinates
-    def draw_filled_circle(x, y, color, index):
+    def draw_circle_pieces(x, y, color, index):
         if color == 'W':
             circle_color = 'white'
             outline_color = 'black'
@@ -88,27 +91,39 @@ def display_UI():
             print(input_board)
 
     # Function to handle mouse hover over a box
-    def on_box_hover(event, index):
+    def on_coordinate_hover(event, index):
         if input_board[index] == 'x':
-            canvas.itemconfig(ghost_pieces[index], fill='red')  # Change the box color on hover
+
+            # Change parameters of ghost circle depending on what color player is
+            color = player_color_dropdown.get()
+            if color == 'White':
+                circle_color = color_light_grey
+                outline_color = color_grey
+                outline_width = 6  # Three times as thick outline for white circles
+            else:
+                circle_color = color_grey
+                outline_color = color_grey
+                outline_width = 2
+
+            # Change the box color on hover
+            canvas.itemconfig(ghost_pieces[index], fill=circle_color, outline=outline_color, width=outline_width)
             canvas.tag_raise(ghost_pieces[index])  # Raise the box to be on top
 
     # Function to handle mouse hover out of a box
-    def on_box_hover_out(event, index):
+    def on_coordinate_hover_out(event, index):
         if input_board[index] == 'x':
-            canvas.itemconfig(ghost_pieces[index], fill='', outline='')  # Reset the box color
+            canvas.itemconfig(ghost_pieces[index], fill='', outline='', width=0)  # Reset the box color
         else:
-            canvas.itemconfig(ghost_pieces[index], fill='',
-                              outline='')  # Keep the box color for non-'x' elements
+            canvas.itemconfig(ghost_pieces[index], fill='', outline='', width=0)  # Keep the box color for non-'x' elements
 
     # Function to handle box click event
-    def on_box_click(event, index):
+    def on_coordinate_click(event, index):
         if input_board[index] != 'x':
             return  # Skip if the element is not 'x'
 
-        if selected_option.get() == 'White':
+        if player_color_dropdown.get() == 'White':
             input_board[index] = 'W'  # Update the input board with 'W'
-        elif selected_option.get() == 'Black':
+        elif player_color_dropdown.get() == 'Black':
             input_board[index] = 'B'  # Update the input board with 'B'
 
         clear_board()
@@ -123,31 +138,27 @@ def display_UI():
             canvas.delete(circle)
         player_pieces.clear()
 
-        # for box in ghost_pieces:
-        #     print("Deleted ghost piece")
-        #     canvas.delete(box)
-        # ghost_pieces = []
-
-    def draw_ghost_pieces():
+    # Function to initially draw ghost pieces on board
+    def create_ghost_pieces():
         for index, element in enumerate(input_board):
             x, y = coordinates[index]
-
             if element == 'x':
-                box = canvas.create_rectangle(x - radius, y - radius, x + radius, y + radius,
-                                              fill='', outline='', tags=index)
-                canvas.tag_bind(box, '<Enter>', lambda event, i=index: on_box_hover(event, i))
-                canvas.tag_bind(box, '<Leave>', lambda event, i=index: on_box_hover_out(event, i))
-                canvas.tag_bind(box, '<Button-1>', lambda event, i=index: on_box_click(event, i))
-                ghost_pieces.append(box)  # Store the box object
+                circle_ghost = canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
+                                                  fill='', outline='', width=0, tags=str(index))
 
-    draw_ghost_pieces()
+                canvas.tag_bind(circle_ghost, '<Enter>', lambda event, i=index: on_coordinate_hover(event, i))
+                canvas.tag_bind(circle_ghost, '<Leave>', lambda event, i=index: on_coordinate_hover_out(event, i))
+                canvas.tag_bind(circle_ghost, '<Button-1>', lambda event, i=index: on_coordinate_click(event, i))
+                ghost_pieces.append(circle_ghost)  # Store the box object
+
+    create_ghost_pieces()
 
     # Function to draw the board with circles based on the input_board
     def draw_player_pieces():
         nonlocal input_board
         for index, element in enumerate(input_board):
             x, y = coordinates[index]
-            draw_filled_circle(x, y, element, index)
+            draw_circle_pieces(x, y, element, index)
 
     # Create the boxes on each coordinate
     draw_player_pieces()
@@ -183,7 +194,7 @@ def display_UI():
         nonlocal turn_count
 
         # Don't increment turn count if starting first move as black
-        if turn_count != 0 or selected_option.get() == 'White':
+        if turn_count != 0 or player_color_dropdown.get() == 'White':
             turn_count += 1
 
         update_label_text()
@@ -226,7 +237,7 @@ def display_UI():
         i = int(field_entry.get())
 
         if AI_heuristic.get() == 'ABGameImproved':
-            if selected_option.get() == 'White':
+            if player_color_dropdown.get() == 'White':
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
                                                      phase=2,
                                                      static_estimate=helper.static_estimation_mid_improved,
@@ -243,7 +254,7 @@ def display_UI():
                                                      pos=input_board,
                                                      turn_count=turn_count)
         elif AI_heuristic.get() == 'ABOpeningImproved':
-            if selected_option.get() == 'White':
+            if player_color_dropdown.get() == 'White':
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
                                                      phase=1,
                                                      static_estimate=helper.static_estimation_opening_improved,
@@ -260,7 +271,7 @@ def display_UI():
                                                      pos=input_board,
                                                      turn_count=turn_count)
         else:
-            if selected_option.get() == 'White':
+            if player_color_dropdown.get() == 'White':
                 AI_board, tree = alphabeta.alphabeta(max_depth=i,
                                                      phase=2,
                                                      static_estimate=helper.static_estimation_mid,
@@ -325,11 +336,11 @@ def display_UI():
     turn_count_label.grid(row=7, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the dropdown menu options
-    options = ['White', 'Black']
-    selected_option = tk.StringVar()
-    selected_option.set(options[0])  # Set the initial selected option
+    player_color_options = ['White', 'Black']
+    player_color_dropdown = tk.StringVar()
+    player_color_dropdown.set(player_color_options[0])  # Set the initial selected option
 
-    dropdown = tk.OptionMenu(sidebar_frame, selected_option, *options)
+    dropdown = tk.OptionMenu(sidebar_frame, player_color_dropdown, *player_color_options)
     dropdown.grid(row=8, column=0, padx=5, pady=5, sticky="ew")
 
     # Create the label and dropdown menu in the sidebar
