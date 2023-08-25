@@ -92,29 +92,64 @@ def display_UI():
 
     # Function to handle mouse hover over a box
     def on_coordinate_hover(event, index):
-        if input_board[index] == 'x':
 
-            # Change parameters of ghost circle depending on what color player is
-            color = player_color_dropdown.get()
+        nonlocal radius
+        color = player_color_dropdown.get()
+
+        # Only allow ghost circles over empty coordinates during opening phase
+        if AI_heuristic.get() == 'ABOpeningImproved':
+
+            if input_board[index] == 'x':
+                # Change parameters of ghost circle depending on what color player is
+                if color == 'White':
+                    circle_color = color_light_grey
+                    outline_color = color_grey
+                    outline_width = 6  # Three times as thick outline for white circles
+                else:
+                    circle_color = color_grey
+                    outline_color = color_grey
+                    outline_width = 2
+
+                # Change the box color on hover
+                canvas.itemconfig(ghost_pieces[index], fill=circle_color, outline=outline_color, width=outline_width)
+                canvas.tag_raise(ghost_pieces[index])  # Raise the box to be on top
+
+        # Ghost circles appear over existing placed pieces in game phase
+        else:
+            # Size parameters
+            x, y = coordinates[index]
+            large_radius = radius + 5
+
+            x0 = x - large_radius
+            y0 = y - large_radius
+            x1 = x + large_radius
+            y1 = y + large_radius
+
+            # Color parameters
             if color == 'White':
-                circle_color = color_light_grey
-                outline_color = color_grey
-                outline_width = 6  # Three times as thick outline for white circles
+                circle_color = 'white'
+                outline_color = 'black'
+                outline_width = 8  # Three times as thick outline for white circles
             else:
-                circle_color = color_grey
-                outline_color = color_grey
-                outline_width = 2
+                circle_color = 'black'
+                outline_color = 'black'
+                outline_width = 3
 
-            # Change the box color on hover
+            # Change the box color and size on hover
+            canvas.coords(ghost_pieces[index], x0, y0, x1, y1)
             canvas.itemconfig(ghost_pieces[index], fill=circle_color, outline=outline_color, width=outline_width)
-            canvas.tag_raise(ghost_pieces[index])  # Raise the box to be on top
+            # canvas.tag_raise(ghost_pieces[index])  # Raise the box to be on top
+
+            # Hovering over existing pieces that are the same color as the player makes them bigger but the same color
+            # Clicking those pieces makes the piece pulse, clicking an invalid coordinate or anywhere else on board will cancel the selection
+            # If player clicks a valid opposing piece to take, then remove that piece and place player piece there
+            # Else deletes player piece at origin coordinate and place player piece in destination coordinate
+            # Need to make a function in helper that determines the valid moves given a specific coordinate, I might have a function like that already
 
     # Function to handle mouse hover out of a box
     def on_coordinate_hover_out(event, index):
         if input_board[index] == 'x':
             canvas.itemconfig(ghost_pieces[index], fill='', outline='', width=0)  # Reset the box color
-        else:
-            canvas.itemconfig(ghost_pieces[index], fill='', outline='', width=0)  # Keep the box color for non-'x' elements
 
     # Function to handle box click event
     def on_coordinate_click(event, index):
