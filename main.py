@@ -60,6 +60,46 @@ def display_UI():
     color_light_grey = "#D3D3D3"  # Hexadecimal color code for light grey
 
     # Function to draw a filled circle at the given coordinates
+    def draw_white_piece(x, y, index):
+        # Draw white circle
+        piece = canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
+                                    fill='white', outline='black', width=6)
+
+        player_pieces.append(piece)  # Store the circle object
+
+        # Bind the click event to the circle
+        canvas.tag_bind(piece, '<Button-1>', lambda event, i=index: on_white_piece_click(event,x, y, i))
+
+    def on_white_piece_click(event, x, y, index):
+
+        # Do nothing in phase 1
+        # If in phase 2 or phase 1, make current piece
+        if AI_heuristic.get == 'ABGameImproved':
+
+
+
+        if input_board[index] != 'x':
+            # Replace the element in the input_board array with 'x'
+            input_board[index] = 'x'
+            clear_board()
+            draw_player_pieces()
+
+            print(input_board)
+
+
+    def draw_black_piece(x, y, index):
+        pass
+
+    def draw_white_ghost_piece(x, y, index):
+        pass
+
+    def draw_black_ghost_piece(x, y, index):
+        pass
+
+    def hide_piece(x, y, index):
+        canvas.itemconfig(player_pieces[index], fill='', outline='', width='')
+
+
     def draw_circle_pieces(x, y, color, index):
         if color == 'W':
             circle_color = 'white'
@@ -167,33 +207,33 @@ def display_UI():
 
     # Function to clear the board and delete the circles
     def clear_board():
-        nonlocal ghost_pieces
-
         for circle in player_pieces:
             canvas.delete(circle)
         player_pieces.clear()
 
     # Function to initially draw ghost pieces on board
-    def create_ghost_pieces():
+    def draw_hover_boundaries():
         for index, element in enumerate(input_board):
             x, y = coordinates[index]
-            if element == 'x':
-                circle_ghost = canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
-                                                  fill='', outline='', width=0, tags=str(index))
+            hover_bounds = canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
+                                              fill='', outline='', width=0, tags=str(index))
 
-                canvas.tag_bind(circle_ghost, '<Enter>', lambda event, i=index: on_coordinate_hover(event, i))
-                canvas.tag_bind(circle_ghost, '<Leave>', lambda event, i=index: on_coordinate_hover_out(event, i))
-                canvas.tag_bind(circle_ghost, '<Button-1>', lambda event, i=index: on_coordinate_click(event, i))
-                ghost_pieces.append(circle_ghost)  # Store the box object
+            canvas.tag_bind(hover_bounds, '<Enter>', lambda event, i=index: on_coordinate_hover(event, i))
+            canvas.tag_bind(hover_bounds, '<Leave>', lambda event, i=index: on_coordinate_hover_out(event, i))
+            canvas.tag_bind(hover_bounds, '<Button-1>', lambda event, i=index: on_coordinate_click(event, i))
+            ghost_pieces.append(hover_bounds)  # Store the box object
 
-    create_ghost_pieces()
+    draw_hover_boundaries()
 
     # Function to draw the board with circles based on the input_board
     def draw_player_pieces():
         nonlocal input_board
-        for index, element in enumerate(input_board):
+        for index, player_color in enumerate(input_board):
             x, y = coordinates[index]
-            draw_circle_pieces(x, y, element, index)
+            if player_color == 'W':
+                draw_white_piece(x, y, index)
+            elif player_color == 'B':
+                draw_black_piece(x, y, index)
 
     # Create the boxes on each coordinate
     draw_player_pieces()
