@@ -359,6 +359,14 @@ def close_mill(location_index, board):
     return False
 
 
+def is_move_legal(old_index, new_index, cur_board):
+    adj_coord = neighbors(old_index)
+    if new_index in adj_coord and cur_board[new_index] == 'x':
+        return True
+    else:
+        return False
+
+
 def neighbors(location_index):
     if location_index == 0:
         return [1, 6]

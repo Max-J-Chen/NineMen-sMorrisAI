@@ -6,6 +6,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import os
 import threading
+import copy
 
 
 def display_UI():
@@ -27,7 +28,8 @@ def display_UI():
     canvas.pack(side=tk.LEFT)
 
     # Display the image on the canvas
-    canvas.create_image(0, 0, anchor=tk.NW, image=board_image)
+    clickable_board = canvas.create_image(0, 0, anchor=tk.NW, image=board_image)
+    canvas.tag_bind(clickable_board, '<Button-1>', lambda event: on_arb_click(event))
 
     # Define the circle parameters
     radius = 20
@@ -57,30 +59,15 @@ def display_UI():
     # Turn count for changing AI modes
     turn_count = 0
     current_turn_player = ''
-    piece_selected = False
+    piece_selected = None
+    remove_mode = False
+    is_player_turn = True
 
     # Create a queue to receive the results of AI
     result_queue = queue.Queue()
 
     # Create a tree variable to hold previous trees
     tree = None
-
-
-
-    def on_white_piece_click(event, x, y, index):
-
-        # Do nothing in phase 1
-        # If in phase 2 or phase 1, make current piece
-        if AI_heuristic.get == 'ABGameImproved':
-            pass
-
-        if input_board[index] != 'x':
-            # Replace the element in the input_board array with 'x'
-            input_board[index] = 'x'
-            clear_board()
-            draw_player_pieces()
-
-            print(input_board)
 
     # Function to draw a filled circle at the given coordinates
     def draw_white_piece(x, y, index):
@@ -132,27 +119,17 @@ def display_UI():
             else:
                 hide_piece(x, y, index)
 
+    # Create the boxes on each coordinate
+    draw_player_pieces()
+
     def draw_single_piece(x, y, index):
         player_color = input_board[index]
-        if player == 'W':
+        if player_color == 'W':
             draw_white_piece(x, y, index)
         elif player_color == 'B':
             draw_black_piece(x, y, index)
         else:
             hide_piece(x, y, index)
-
-    # Create the boxes on each coordinate
-    draw_player_pieces()
-
-    # Function to handle circle click event
-    def on_circle_click(event, index):
-        if input_board[index] != 'x':
-            # Replace the element in the input_board array with 'x'
-            input_board[index] = 'x'
-            clear_board()
-            draw_player_pieces()
-
-            print(input_board)
 
     # Function to handle mouse hover over a box
     def on_coordinate_hover(event, index):
@@ -160,8 +137,18 @@ def display_UI():
         player_color = player_color_dropdown.get()
         input_board_piece = input_board[index]
         x, y = coordinates[index]
+        nonlocal remove_mode
+        # If statement here that prevents hovering at all if it is not the player's turn
 
-        ## If statement here that prevents hovering at all if it is not the player's turn
+        # Highlight potential pieces that can be removed in remove mode
+        if remove_mode:
+            # Prevent player from removing any pieces in a mill
+            if not helper.close_mill(index, input_board):
+                if player_color_dropdown.get() == 'White' and input_board[index] == 'B':
+                    draw_black_piece_large(x, y, index)
+                elif player_color_dropdown.get() == 'Black' and input_board[index] == 'W':
+                    draw_white_piece_large(x, y, index)
+                return
 
         ###############################################################################################################
         # PHASE 1 LOGIC
@@ -178,12 +165,17 @@ def display_UI():
         # PHASE 2 LOGIC
         ###############################################################################################################
         else:
-            if not piece_selected:
-                # Make player's own piece large if a piece already not selected
+            # Make player's own piece large if a piece already not selected
+            if not is_piece_selected():
                 if input_board_piece == 'W' and player_color == "White":
                     draw_white_piece_large(x, y, index)
                 elif input_board_piece == 'B' and player_color == "Black":
                     draw_black_piece_large(x, y, index)
+            elif helper.is_move_legal(piece_selected, index, input_board):
+                if player_color == "White":
+                    draw_white_piece(x, y, index)
+                else:
+                    draw_black_piece(x, y, index)
 
             # if player has not clicked on their own piece yet, then
             # when hovering over their own pieces only, then make those pieces bigger
@@ -196,13 +188,31 @@ def display_UI():
 
     # Function to handle mouse hover out of a box
     def on_coordinate_hover_out(event, index):
-        draw_player_pieces()
-        # x, y = coordinates[index]
-        # if input_board[index] == 'x':
-        #     hide_piece(x, y, index)
+        # draw_player_pieces()
+        if is_piece_selected():
+            if input_board[index] == 'x':
+                x, y = coordinates[index]
+                draw_single_piece(x, y, index)
+            return
+        else:
+            x, y = coordinates[index]
+            draw_single_piece(x, y, index)
 
     # Function to handle box click event
     def on_coordinate_click(event, index):
+        nonlocal piece_selected
+        nonlocal remove_mode
+        print("COORD CLICK")
+        if remove_mode:
+            # Prevent player from removing any pieces in a mill
+            if not helper.close_mill(index, input_board):
+                if player_color_dropdown.get() == 'White' and input_board[index] == 'B' or player_color_dropdown.get() == 'Black' and input_board[index] == 'W':
+                    input_board[index] = 'x'
+                    remove_mode = False
+                    draw_player_pieces()
+                    on_end_turn_button()
+                    return
+
         if get_phase() == 1:
             if player_color_dropdown.get() == 'White':
                 input_board[index] = 'W'  # Update the input board with 'W'
@@ -210,10 +220,63 @@ def display_UI():
                 input_board[index] = 'B'  # Update the input board with 'B'
             draw_player_pieces()
             print(''.join(map(str, input_board)))  # Print the updated board
+            if check_mill(index):
+                return
+            on_end_turn_button()
         else:
+            # Check if its the players turn
+            # If player turn, check if they selected one of their pieces
+            x, y = coordinates[index]
+            if player_color_dropdown.get() == 'White' and input_board[index] == 'W':
+                # Player cannot click on another white piece while in selected mode
+                if is_piece_selected():
+                    on_arb_click(None)
+                else:
+                    piece_selected = index
+                    draw_white_ghost_piece(x, y, index)
+            elif player_color_dropdown.get() == 'Black' and input_board[index] == 'B':
+                if is_piece_selected():
+                    on_arb_click(None)
+                else:
+                    piece_selected = index
+                    draw_black_ghost_piece(x, y, index)
 
+            # Check if player selected a valid landing position
+            elif helper.is_move_legal(piece_selected, index, input_board):
+                if player_color_dropdown.get() == 'White':
+                    input_board[index] = 'W'
+                else:
+                    input_board[index] = 'B'
 
+                input_board[piece_selected] = 'x'
+                draw_player_pieces()
+                on_arb_click(None)
+                if check_mill(index):
+                    return
+                on_end_turn_button()
+            else:
+                on_arb_click(None)
 
+    def check_mill(index):
+        nonlocal remove_mode
+        if helper.close_mill(index, input_board):
+            remove_mode = True
+            return True
+        else:
+            return False
+
+    def is_piece_selected():
+        nonlocal piece_selected
+        if piece_selected is None:
+            return False
+        else:
+            return True
+
+    def on_arb_click(event):
+        nonlocal piece_selected
+        piece_selected = None
+        draw_player_pieces()
+        print("ARB CLICK")
 
     # Hover Boundaries will be used to determine on_hover, hover_off, and on_click events.
     def draw_hover_boundaries():
@@ -287,13 +350,13 @@ def display_UI():
             root.after(100, check_result)
             return
 
-        if turn_count > 16:
-            AI_heuristic.set(options2[7])
+        if turn_count >= 16:
+            AI_heuristic.set(options2[1])
 
         update_label_text()
 
         # If we got the result, update the GUI
-        clear_board()
+        # clear_board()
         draw_player_pieces()
 
     def run_AI(return_queue):
